@@ -19,8 +19,8 @@ func NewDB(path string) (*sql.DB, error) {
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS products (
     id       INTEGER PRIMARY KEY AUTOINCREMENT,
-    name     TEXT NOT NULL,
-    category TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (trim(name) <> ''),
+    category TEXT NOT NULL CHECK (category IN ('grain', 'protein', 'vegetable')),
     banned   BOOLEAN DEFAULT FALSE,
     favorite BOOLEAN DEFAULT FALSE
 );

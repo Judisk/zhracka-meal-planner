@@ -2,15 +2,16 @@ package storage
 
 import (
 	"foods/internal/products"
+	"strings"
 	"testing"
 )
 
 func TestDB_CreatingSuccess(t *testing.T) {
-	_, err := NewDB(":memory:")
+	db, err := NewDB(":memory:")
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
+	defer db.Close()
 }
 
 func TestDB_InsertSuccess(t *testing.T) {
@@ -19,23 +20,21 @@ func TestDB_InsertSuccess(t *testing.T) {
 
 	db, err := NewDB(":memory:")
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
 	defer db.Close()
 
 	err = InsertProduct(db, name, category, false, false)
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
 }
 
 func TestDB_SelectSuccess(t *testing.T) {
 	name1 := "Test1"
 	name2 := "Test2"
-	expectedId := []products.ProductID{1, 2}
-	var testingId products.ProductID = 1
+	expectedID := []products.ProductID{1, 2}
+	var testingID products.ProductID = 1
 	category := products.Grain
 	expectedLen := 2
 
@@ -44,52 +43,136 @@ func TestDB_SelectSuccess(t *testing.T) {
 
 	db, err := NewDB(":memory:")
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
 	defer db.Close()
 
 	err = InsertProduct(db, name1, category, false, false)
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
 	err = InsertProduct(db, name2, category, false, false)
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
 	arr, err := SelectProductIDsByCategory(db, category)
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if len(arr) != expectedLen {
-		t.Fatalf("ошибка длины массива: %v", err)
+		t.Fatalf("expected ID slice length %d, got %d", expectedLen, len(arr))
 	}
 
 	for i := range arr {
-		if arr[i] != expectedId[i] {
-			t.Errorf("ожидали '%d' получили %d", expectedId[i], arr[i])
+		if arr[i] != expectedID[i] {
+			t.Errorf("expected ID %d, got %d", expectedID[i], arr[i])
 		}
 	}
-	p, err := SelectProductByID(db, testingId)
+
+	p, err := SelectProductByID(db, testingID)
 	if err != nil {
-		t.Fatalf("unexpected error : %v", err)
-	}
-	if p.ID != products.ProductID(testingId) {
-		t.Errorf("ожидали '%d' получили %d", testingId, p.ID)
-	}
-	if p.Name != name1 {
-		t.Errorf("ожидали '%s' получили %s", name1, p.Name)
-	}
-	if p.Category != category {
-		t.Errorf("ожидали '%v' получили %v", category, p.Category)
-	}
-	if p.Banned != expectedBanned {
-		t.Errorf("ожидали '%t' получили %t", expectedBanned, p.Banned)
-	}
-	if p.Favorite != expectedFavorite {
-		t.Errorf("ожидали '%t' получили %t", expectedFavorite, p.Favorite)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if p.ID != testingID {
+		t.Errorf("expected ID %d, got %d", testingID, p.ID)
+	}
+
+	if p.Name != name1 {
+		t.Errorf("expected name %q, got %q", name1, p.Name)
+	}
+
+	if p.Category != category {
+		t.Errorf("expected category %q, got %q", category, p.Category)
+	}
+
+	if p.Banned != expectedBanned {
+		t.Errorf("expected banned %t, got %t", expectedBanned, p.Banned)
+	}
+
+	if p.Favorite != expectedFavorite {
+		t.Errorf("expected favorite %t, got %t", expectedFavorite, p.Favorite)
+	}
+}
+
+func TestDB_InsertEmptyName(t *testing.T) {
+	name := ""
+	category := products.Grain
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	err = InsertProduct(db, name, category, false, false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDB_InsertClosedDB(t *testing.T) {
+	name := "Test Name"
+	category := products.Grain
+	expectedError := "database is closed"
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.Close()
+
+	err = InsertProduct(db, name, category, false, false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("expected error to contain %q, got %v", expectedError, err)
+	}
+}
+
+func TestDB_SelectUnknownCategoryReturnsEmptyIDs(t *testing.T) {
+	unknownCategory := products.Category("testCat")
+	name := "Test Name"
+	category := products.Grain
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	err = InsertProduct(db, name, category, false, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	arr, err := SelectProductIDsByCategory(db, unknownCategory)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(arr) != 0 {
+		t.Errorf("expected empty ID slice, got %v", arr)
+	}
+}
+
+func TestDB_SelectIDNotExist(t *testing.T) {
+	var unknownID products.ProductID = 15
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	_, err = SelectProductByID(db, unknownID)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
 }
