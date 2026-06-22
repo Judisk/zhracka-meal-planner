@@ -176,3 +176,75 @@ func TestDB_SelectIDNotExist(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestDB_DeleteNonExistentProduct(t *testing.T) {
+	name := "Test"
+	category := products.Grain
+	removedName := "ThisProductDoesNotExist"
+	var testingID products.ProductID = 1
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	if err = InsertProduct(db, name, category, false, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err = DeleteProductsByName(db, removedName); err != nil {
+		t.Fatalf("expected NO error when deleting non-existent product, got: %v", err)
+	}
+	p, err := SelectProductByID(db, testingID)
+	if err != nil {
+		t.Fatalf("product 'Test' should still exist, got error: %v", err)
+	}
+	if p.Name != name {
+		t.Errorf("product 'Test' was unexpectedly deleted or modified, got name: '%s'", p.Name)
+	}
+}
+
+func TestDB_DeleteSuccess(t *testing.T) {
+	name := "Test"
+	category := products.Grain
+	var testingID products.ProductID = 1
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	if err = InsertProduct(db, name, category, false, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err = DeleteProductsByName(db, name); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = SelectProductByID(db, testingID)
+	if err == nil {
+		t.Fatal("expected error (product not found), but got nil")
+	}
+
+}
+
+func TestDB_DeleteProductsByNameClosedDB(t *testing.T) {
+	category := products.Grain
+	name := "Test"
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err = InsertProduct(db, name, category, false, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.Close()
+
+	if err = DeleteProductsByName(db, name); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}

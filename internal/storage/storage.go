@@ -31,3 +31,4 @@ func NewDB(path string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
