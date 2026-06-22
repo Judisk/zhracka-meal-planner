@@ -7,8 +7,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func NewDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "products.db")
+func NewDB(path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("sql open: %w", err)
 	}

@@ -15,9 +15,10 @@ func main() {
 
 	fmt.Println(d.GenerateMeals(3, p.Grains, p.Proteins, p.Vegetables, nil))
 
-	db, err := storage.NewDB()
+	db, err := storage.NewDB("products.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
 }

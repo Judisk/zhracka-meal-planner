@@ -6,6 +6,8 @@ type Product struct {
 	ID       ProductID
 	Name     string
 	Category Category
+	Banned   bool
+	Favorite bool
 }
 
 type Category string
