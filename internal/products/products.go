@@ -18,6 +18,7 @@ const (
 	Vegetable Category = "vegetable"
 )
 
+/*
 var Grains = []Product{
 
 	{ID: 1, Name: "рис", Category: Grain},
@@ -32,3 +33,6 @@ var Vegetables = []Product{
 	{ID: 6, Name: "огурец", Category: Vegetable},
 	{ID: 7, Name: "томат", Category: Vegetable},
 }
+
+
+*/

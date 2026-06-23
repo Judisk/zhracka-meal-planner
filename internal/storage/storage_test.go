@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// HAPPY PATH /////////////////////////////////////////////////
 func TestDB_CreatingSuccess(t *testing.T) {
 	db, err := NewDB(":memory:")
 	if err != nil {
@@ -28,6 +29,31 @@ func TestDB_InsertSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+}
+
+func TestDB_DeleteSuccess(t *testing.T) {
+	name := "Test"
+	category := products.Grain
+	var testingID products.ProductID = 1
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	if err = InsertProduct(db, name, category, false, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err = DeleteProductsByName(db, name); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = SelectProductByID(db, testingID)
+	if err == nil {
+		t.Fatal("expected error (product not found), but got nil")
+	}
+
 }
 
 func TestDB_SelectSuccess(t *testing.T) {
@@ -98,6 +124,59 @@ func TestDB_SelectSuccess(t *testing.T) {
 	}
 }
 
+func TestDB_SelectProductsSuccess(t *testing.T) {
+
+	productsNames := []string{"T1", "T2", "T3"}
+	expectedIDs := []products.ProductID{1, 2, 3}
+	category := products.Grain
+	expectedBanned := false
+	expectedFavorite := false
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	for _, elem := range productsNames {
+		if err = InsertProduct(db, elem, category, false, false); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	gotProducts, err := SelectProductsByCategory(db, category)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(gotProducts) != len(productsNames) {
+		t.Fatalf("expected %d products, got %d", len(productsNames), len(gotProducts))
+	}
+
+	for i, elem := range gotProducts {
+		if elem.ID != expectedIDs[i] {
+			t.Errorf("expected ID %d, got %d", expectedIDs[i], elem.ID)
+		}
+
+		if elem.Name != productsNames[i] {
+			t.Errorf("expected name %q, got %q", productsNames[i], elem.Name)
+		}
+
+		if elem.Category != category {
+			t.Errorf("expected category %q, got %q", category, elem.Category)
+		}
+
+		if elem.Banned != expectedBanned {
+			t.Errorf("expected banned %t, got %t", expectedBanned, elem.Banned)
+		}
+
+		if elem.Favorite != expectedFavorite {
+			t.Errorf("expected favorite %t, got %t", expectedFavorite, elem.Favorite)
+		}
+	}
+}
+
+// Errors path ///////////////////////////////////////////////
 func TestDB_InsertEmptyName(t *testing.T) {
 	name := ""
 	category := products.Grain
@@ -202,31 +281,6 @@ func TestDB_DeleteNonExistentProduct(t *testing.T) {
 	if p.Name != name {
 		t.Errorf("product 'Test' was unexpectedly deleted or modified, got name: '%s'", p.Name)
 	}
-}
-
-func TestDB_DeleteSuccess(t *testing.T) {
-	name := "Test"
-	category := products.Grain
-	var testingID products.ProductID = 1
-
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	defer db.Close()
-
-	if err = InsertProduct(db, name, category, false, false); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = DeleteProductsByName(db, name); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	_, err = SelectProductByID(db, testingID)
-	if err == nil {
-		t.Fatal("expected error (product not found), but got nil")
-	}
-
 }
 
 func TestDB_DeleteProductsByNameClosedDB(t *testing.T) {
