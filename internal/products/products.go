@@ -3,11 +3,12 @@ package products
 type ProductID int
 
 type Product struct {
-	ID       ProductID
-	Name     string
-	Category Category
-	Banned   bool
-	Favorite bool
+	ID             ProductID
+	Name           string
+	Category       Category
+	Banned         bool
+	Preference     PreferenceStatus
+	SelectionScore float64
 }
 
 type Category string
@@ -18,21 +19,25 @@ const (
 	Vegetable Category = "vegetable"
 )
 
-/*
-var Grains = []Product{
+type PreferenceStatus float64
 
-	{ID: 1, Name: "рис", Category: Grain},
-	{ID: 2, Name: "гречка", Category: Grain},
-	{ID: 3, Name: "овес", Category: Grain},
-}
-var Proteins = []Product{
-	{ID: 4, Name: "яйцо", Category: Protein},
-	{ID: 5, Name: "курица", Category: Protein},
-}
-var Vegetables = []Product{
-	{ID: 6, Name: "огурец", Category: Vegetable},
-	{ID: 7, Name: "томат", Category: Vegetable},
+const (
+	Liked    PreferenceStatus = 1.5
+	Neutral  PreferenceStatus = 1
+	Disliked PreferenceStatus = 0.5
+)
+
+type BlockedProducts struct {
+	ByID   map[ProductID]bool
+	ByName map[string]bool
 }
 
-
-*/
+func NewProduct(name string, category Category) Product {
+	return Product{
+		Name:           name,
+		Category:       category,
+		Banned:         false,
+		Preference:     Neutral,
+		SelectionScore: 1.0,
+	}
+}

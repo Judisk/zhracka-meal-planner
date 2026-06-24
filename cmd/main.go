@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"log"
 
-	"foods/internal/dayone"
-	"foods/internal/foodgenerator"
-	"foods/internal/products"
-	"foods/internal/storage"
+	d "foods/internal/dayone"
+	f "foods/internal/foodgenerator"
+	p "foods/internal/products"
+	s "foods/internal/storage"
 )
 
 func main() {
 
-	db, err := storage.NewDB("products.db")
+	db, err := s.NewDB("products.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,26 +23,26 @@ func main() {
 	if err := seedDefaultProductsIfEmpty(db); err != nil {
 		log.Fatal(err)
 	}
-	grains, err := storage.SelectProductsByCategory(db, products.Grain)
+	grains, err := s.SelectAllowedProductsByCategory(db, p.Grain)
 	if err != nil {
 		log.Fatal(err)
 	}
-	proteins, err := storage.SelectProductsByCategory(db, products.Protein)
+	proteins, err := s.SelectAllowedProductsByCategory(db, p.Protein)
 	if err != nil {
 		log.Fatal(err)
 	}
-	vegetables, err := storage.SelectProductsByCategory(db, products.Vegetable)
+	vegetables, err := s.SelectAllowedProductsByCategory(db, p.Vegetable)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	day, err := dayone.GenerateMeals(3, grains, proteins, vegetables, nil)
+	day, err := d.GenerateMeals(3, grains, proteins, vegetables, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(day)
 
-	dish, err := foodgenerator.GenerateDish("Test name #1", grains, proteins, vegetables, nil)
+	dish, err := f.GenerateDish("Test name #1", grains, proteins, vegetables, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,20 +66,20 @@ func seedDefaultProductsIfEmpty(db *sql.DB) error {
 
 func insertDefaultProducts(db *sql.DB) error {
 
-	defaults := []products.Product{
-		{Name: "рис", Category: products.Grain},
-		{Name: "гречка", Category: products.Grain},
-		{Name: "овес", Category: products.Grain},
+	defaults := []p.Product{
+		p.NewProduct("рис", p.Grain),
+		p.NewProduct("овес", p.Grain),
+		p.NewProduct("гречка", p.Grain),
 
-		{Name: "яйцо", Category: products.Protein},
-		{Name: "курица", Category: products.Protein},
+		p.NewProduct("яйцо", p.Protein),
+		p.NewProduct("курица", p.Protein),
 
-		{Name: "томат", Category: products.Vegetable},
-		{Name: "огурец", Category: products.Vegetable},
+		p.NewProduct("томат", p.Vegetable),
+		p.NewProduct("огурец", p.Vegetable),
 	}
 
 	for _, p := range defaults {
-		if err := storage.InsertProduct(db, p.Name, p.Category, p.Banned, p.Favorite); err != nil {
+		if err := s.InsertProduct(db, p.Name, p.Category, p.Banned, p.Preference); err != nil {
 			return fmt.Errorf("insert default product %q: %w", p.Name, err)
 		}
 	}

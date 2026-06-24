@@ -34,7 +34,7 @@ func SelectProductIDsByCategory(db *sql.DB, category products.Category) ([]produ
 
 func SelectProductByID(db *sql.DB, id products.ProductID) (products.Product, error) {
 
-	query := "SELECT id, name, category, banned, favorite FROM products WHERE id = ?"
+	query := "SELECT id, name, category, banned, preference, selection_score FROM products WHERE id = ?"
 
 	var p products.Product
 
@@ -43,7 +43,8 @@ func SelectProductByID(db *sql.DB, id products.ProductID) (products.Product, err
 		&p.Name,
 		&p.Category,
 		&p.Banned,
-		&p.Favorite,
+		&p.Preference,
+		&p.SelectionScore,
 	)
 
 	if err != nil {
@@ -56,9 +57,9 @@ func SelectProductByID(db *sql.DB, id products.ProductID) (products.Product, err
 	return p, nil
 }
 
-func SelectProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
+func SelectAllProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
 	query := `
-		SELECT id, name, category, banned, favorite
+		SELECT id, name, category, banned, preference, selection_score
 		FROM products
 		WHERE category = ?
 		ORDER BY id
@@ -81,7 +82,8 @@ func SelectProductsByCategory(db *sql.DB, category products.Category) ([]product
 			&p.Name,
 			&p.Category,
 			&p.Banned,
-			&p.Favorite,
+			&p.Preference,
+			&p.SelectionScore,
 		); err != nil {
 			return nil, fmt.Errorf("scan row: %w", err)
 		}
@@ -90,6 +92,46 @@ func SelectProductsByCategory(db *sql.DB, category products.Category) ([]product
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("row iteration: %w", err)
+	}
+
+	return result, nil
+}
+
+func SelectAllowedProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
+	query := `
+		SELECT id, name, category, banned, preference, selection_score
+		FROM products
+		WHERE category = ? AND banned = 0
+		ORDER BY id
+	`
+
+	rows, err := db.Query(query, category)
+	if err != nil {
+		return nil, fmt.Errorf("query allowed products: %w", err)
+	}
+	defer rows.Close()
+
+	var result []products.Product
+
+	for rows.Next() {
+		var p products.Product
+
+		if err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Category,
+			&p.Banned,
+			&p.Preference,
+			&p.SelectionScore,
+		); err != nil {
+			return nil, fmt.Errorf("scan allowed product row: %w", err)
+		}
+
+		result = append(result, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("allowed product row iteration: %w", err)
 	}
 
 	return result, nil
