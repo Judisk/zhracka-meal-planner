@@ -440,6 +440,40 @@ func TestDB_InsertEmptyName(t *testing.T) {
 	}
 }
 
+func TestDB_SelectBannedProductsReturnsEmptyWhenNoBannedProducts(t *testing.T) {
+
+	var allowedProduct = products.Product{
+		Name:       "A1",
+		Category:   products.Grain,
+		Banned:     false,
+		Preference: products.Neutral,
+	}
+
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer db.Close()
+
+	if err = InsertProduct(db, allowedProduct.Name,
+		allowedProduct.Category,
+		allowedProduct.Banned,
+		allowedProduct.Preference); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	gotBannedProduct, err := SelectBannedProducts(db)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(gotBannedProduct.ByName) != 0 {
+		t.Errorf("expected empty ByName map, got %d items", len(gotBannedProduct.ByName))
+	}
+	if len(gotBannedProduct.ByID) != 0 {
+		t.Errorf("expected empty ByID map, got %d items", len(gotBannedProduct.ByID))
+	}
+
+}
+
 func TestDB_InsertClosedDB(t *testing.T) {
 	name := "Test Name"
 	category := products.Grain
