@@ -67,19 +67,19 @@ func seedDefaultProductsIfEmpty(db *sql.DB) error {
 func insertDefaultProducts(db *sql.DB) error {
 
 	defaults := []p.Product{
-		p.NewProduct("рис", p.Grain),
-		p.NewProduct("овес", p.Grain),
-		p.NewProduct("гречка", p.Grain),
+		p.NewDefaultProduct("рис", p.Grain),
+		p.NewDefaultProduct("овес", p.Grain),
+		p.NewDefaultProduct("гречка", p.Grain),
 
-		p.NewProduct("яйцо", p.Protein),
-		p.NewProduct("курица", p.Protein),
+		p.NewDefaultProduct("яйцо", p.Protein),
+		p.NewDefaultProduct("курица", p.Protein),
 
-		p.NewProduct("томат", p.Vegetable),
-		p.NewProduct("огурец", p.Vegetable),
+		p.NewDefaultProduct("томат", p.Vegetable),
+		p.NewDefaultProduct("огурец", p.Vegetable),
 	}
 
 	for _, p := range defaults {
-		if err := s.InsertProduct(db, p.Name, p.Category, p.Banned, p.Preference); err != nil {
+		if err := s.InsertProduct(db, p); err != nil {
 			return fmt.Errorf("insert default product %q: %w", p.Name, err)
 		}
 	}

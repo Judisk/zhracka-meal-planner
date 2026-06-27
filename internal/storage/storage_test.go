@@ -1,10 +1,27 @@
 package storage
 
 import (
+	"database/sql"
 	"foods/internal/products"
 	"strings"
 	"testing"
 )
+
+// Helpers
+func setupDB(t *testing.T) *sql.DB {
+	db, err := NewDB(":memory:")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	return db
+}
+
+func insertDB(t *testing.T, db *sql.DB, p products.Product) {
+	err := InsertProduct(db, p)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
 
 // HAPPY PATH /////////////////////////////////////////////////
 func TestDB_CreatingSuccess(t *testing.T) {
@@ -19,14 +36,10 @@ func TestDB_InsertSuccess(t *testing.T) {
 	name := "Test"
 	category := products.Grain
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	err = InsertProduct(db, name, category, false, products.Neutral)
-	if err != nil {
+	if err := InsertProduct(db, products.NewDefaultProduct(name, category)); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -36,20 +49,15 @@ func TestDB_DeleteSuccess(t *testing.T) {
 	category := products.Grain
 	var testingID products.ProductID = 1
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, name, category, false, products.Neutral); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = DeleteProductsByName(db, name); err != nil {
+	insertDB(t, db, products.NewDefaultProduct(name, category))
+	if err := DeleteProductsByName(db, name); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	_, err = SelectProductByID(db, testingID)
+	_, err := SelectProductByID(db, testingID)
 	if err == nil {
 		t.Fatal("expected error (product not found), but got nil")
 	}
@@ -67,21 +75,12 @@ func TestDB_SelectSuccess(t *testing.T) {
 	expectedBanned := false
 	expectedPreference := products.Neutral
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	err = InsertProduct(db, name1, category, false, products.Neutral)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, products.NewDefaultProduct(name1, category))
 
-	err = InsertProduct(db, name2, category, false, products.Neutral)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, products.NewDefaultProduct(name2, category))
 
 	arr, err := SelectProductIDsByCategory(db, category)
 	if err != nil {
@@ -138,21 +137,14 @@ func TestDB_SelectAllowedProductsSuccess(t *testing.T) {
 	allowedStatus := false
 	bannedStatus := true
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
 	for i := range expectedLen {
-		if err = InsertProduct(db, productsNames[i], category, allowedStatus, products.Neutral); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
+		insertDB(t, db, products.NewProduct(productsNames[i], category, allowedStatus, products.Neutral))
 	}
 
-	if err = InsertProduct(db, productsNames[3], category, bannedStatus, products.Neutral); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, products.NewProduct(productsNames[3], category, bannedStatus, products.Neutral))
 
 	gotAllowedProducts, err := SelectAllowedProductsByCategory(db, category)
 	if err != nil {
@@ -199,16 +191,11 @@ func TestDB_SelectAllProductsSuccess(t *testing.T) {
 	expectedPreference := products.Neutral
 	expectedSelectionScore := 1.0
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	for _, elem := range productsNames {
-		if err = InsertProduct(db, elem, category, false, products.Neutral); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
+	for _, name := range productsNames {
+		insertDB(t, db, products.NewDefaultProduct(name, category))
 	}
 
 	gotProducts, err := SelectAllProductsByCategory(db, category)
@@ -247,42 +234,21 @@ func TestDB_SelectAllProductsSuccess(t *testing.T) {
 }
 
 func TestDB_SelectBannedProductsCheckIDandNameSuccess(t *testing.T) {
-	var allowedProduct = products.Product{
-		Name:       "A1",
-		Category:   products.Grain,
-		Banned:     false,
-		Preference: products.Neutral,
-	}
-	var bannedProduct = products.Product{
-		Name:       "B1",
-		Category:   products.Grain,
-		Banned:     true,
-		Preference: products.Neutral,
-	}
+	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
+	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
+
 	var expectedBannedID products.ProductID = 2
 	var expectedBannedName string = "b1"
 
 	var unexpectedID products.ProductID = 1
 	var unexpectedName string = "a1"
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, allowedProduct.Name,
-		allowedProduct.Category,
-		allowedProduct.Banned,
-		allowedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = InsertProduct(db, bannedProduct.Name,
-		bannedProduct.Category,
-		bannedProduct.Banned,
-		bannedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, allowedProduct)
+	insertDB(t, db, bannedProduct)
+
 	gotBannedProduct, err := SelectBannedProducts(db)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -306,42 +272,21 @@ func TestDB_SelectBannedProductsCheckIDandNameSuccess(t *testing.T) {
 }
 
 func TestDB_SelectBannedProductsCheckFalseIDandTrueNameSuccess(t *testing.T) {
-	var allowedProduct = products.Product{
-		Name:       "A1",
-		Category:   products.Grain,
-		Banned:     false,
-		Preference: products.Neutral,
-	}
-	var bannedProduct = products.Product{
-		Name:       "B1",
-		Category:   products.Grain,
-		Banned:     true,
-		Preference: products.Neutral,
-	}
+	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
+	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
+
 	var unexpectedBannedID products.ProductID = 22
 	var expectedBannedName string = "b1"
 
 	var unexpectedID products.ProductID = 1
 	var unexpectedName string = "a1"
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, allowedProduct.Name,
-		allowedProduct.Category,
-		allowedProduct.Banned,
-		allowedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = InsertProduct(db, bannedProduct.Name,
-		bannedProduct.Category,
-		bannedProduct.Banned,
-		bannedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, allowedProduct)
+	insertDB(t, db, bannedProduct)
+
 	gotBannedProduct, err := SelectBannedProducts(db)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -365,42 +310,21 @@ func TestDB_SelectBannedProductsCheckFalseIDandTrueNameSuccess(t *testing.T) {
 }
 
 func TestDB_SelectBannedProductsCheckTrueIDandFalseNameSuccess(t *testing.T) {
-	var allowedProduct = products.Product{
-		Name:       "A1",
-		Category:   products.Grain,
-		Banned:     false,
-		Preference: products.Neutral,
-	}
-	var bannedProduct = products.Product{
-		Name:       "B1",
-		Category:   products.Grain,
-		Banned:     true,
-		Preference: products.Neutral,
-	}
+	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
+	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
+
 	var expectedBannedID products.ProductID = 2
 	var unexpectedBannedName string = "b11"
 
 	var unexpectedID products.ProductID = 1
 	var unexpectedName string = "a1"
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, allowedProduct.Name,
-		allowedProduct.Category,
-		allowedProduct.Banned,
-		allowedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = InsertProduct(db, bannedProduct.Name,
-		bannedProduct.Category,
-		bannedProduct.Banned,
-		bannedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, allowedProduct)
+	insertDB(t, db, bannedProduct)
+
 	gotBannedProduct, err := SelectBannedProducts(db)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -434,7 +358,7 @@ func TestDB_InsertEmptyName(t *testing.T) {
 	}
 	defer db.Close()
 
-	err = InsertProduct(db, name, category, false, products.Neutral)
+	err = InsertProduct(db, products.NewDefaultProduct(name, category))
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -442,25 +366,13 @@ func TestDB_InsertEmptyName(t *testing.T) {
 
 func TestDB_SelectBannedProductsReturnsEmptyWhenNoBannedProducts(t *testing.T) {
 
-	var allowedProduct = products.Product{
-		Name:       "A1",
-		Category:   products.Grain,
-		Banned:     false,
-		Preference: products.Neutral,
-	}
+	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, allowedProduct.Name,
-		allowedProduct.Category,
-		allowedProduct.Banned,
-		allowedProduct.Preference); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, allowedProduct)
+
 	gotBannedProduct, err := SelectBannedProducts(db)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -479,14 +391,10 @@ func TestDB_InsertClosedDB(t *testing.T) {
 	category := products.Grain
 	expectedError := "database is closed"
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
+	db := setupDB(t)
 	db.Close()
 
-	err = InsertProduct(db, name, category, false, products.Neutral)
+	err := InsertProduct(db, products.NewDefaultProduct(name, category))
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -501,16 +409,10 @@ func TestDB_SelectUnknownCategoryReturnsEmptyIDs(t *testing.T) {
 	name := "Test Name"
 	category := products.Grain
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	err = InsertProduct(db, name, category, false, products.Neutral)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, products.NewDefaultProduct(name, category))
 
 	arr, err := SelectProductIDsByCategory(db, unknownCategory)
 	if err != nil {
@@ -525,13 +427,10 @@ func TestDB_SelectUnknownCategoryReturnsEmptyIDs(t *testing.T) {
 func TestDB_SelectIDNotExist(t *testing.T) {
 	var unknownID products.ProductID = 15
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	_, err = SelectProductByID(db, unknownID)
+	_, err := SelectProductByID(db, unknownID)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -543,16 +442,12 @@ func TestDB_DeleteNonExistentProduct(t *testing.T) {
 	removedName := "ThisProductDoesNotExist"
 	var testingID products.ProductID = 1
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 	defer db.Close()
 
-	if err = InsertProduct(db, name, category, false, products.Neutral); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if err = DeleteProductsByName(db, removedName); err != nil {
+	insertDB(t, db, products.NewDefaultProduct(name, category))
+
+	if err := DeleteProductsByName(db, removedName); err != nil {
 		t.Fatalf("expected NO error when deleting non-existent product, got: %v", err)
 	}
 	p, err := SelectProductByID(db, testingID)
@@ -568,18 +463,13 @@ func TestDB_DeleteProductsByNameClosedDB(t *testing.T) {
 	category := products.Grain
 	name := "Test"
 
-	db, err := NewDB(":memory:")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	db := setupDB(t)
 
-	if err = InsertProduct(db, name, category, false, products.Neutral); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	insertDB(t, db, products.NewDefaultProduct(name, category))
 
 	db.Close()
 
-	if err = DeleteProductsByName(db, name); err == nil {
+	if err := DeleteProductsByName(db, name); err == nil {
 		t.Fatal("expected error, got nil")
 	}
 }

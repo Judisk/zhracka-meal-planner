@@ -32,12 +32,16 @@ type BlockedProducts struct {
 	ByName map[string]bool
 }
 
-func NewProduct(name string, category Category) Product {
+func NewDefaultProduct(name string, category Category) Product {
+	return NewProduct(name, category, false, Neutral)
+}
+
+func NewProduct(name string, category Category, banned bool, preference PreferenceStatus) Product {
 	return Product{
 		Name:           name,
 		Category:       category,
-		Banned:         false,
-		Preference:     Neutral,
+		Banned:         banned,
+		Preference:     preference,
 		SelectionScore: 1.0,
 	}
 }
