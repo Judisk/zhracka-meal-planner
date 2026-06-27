@@ -38,14 +38,16 @@ func getProd(array []products.Product, rng *rand.Rand) (products.Product, error)
 	if len(array) == 0 {
 		return products.Product{}, fmt.Errorf("getProd: empty product list")
 	}
-	var idx int
-	if rng != nil {
-
-		idx = rng.IntN(len(array))
-	} else {
-
-		idx = rand.IntN(len(array))
+	var total float64
+	for _, p := range array {
+		total += p.SelectionScore
 	}
-
-	return array[idx], nil
+	r := rng.Float64() * total
+	for _, p := range array {
+		r -= p.SelectionScore
+		if r <= 0 {
+			return p, nil
+		}
+	}
+	return products.Product{}, fmt.Errorf("getProd: after randomize r>0")
 }

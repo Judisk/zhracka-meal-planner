@@ -347,7 +347,118 @@ func TestDB_SelectBannedProductsCheckTrueIDandFalseNameSuccess(t *testing.T) {
 	}
 }
 
+func TestDB_UpdateSelectionScoreSuccess(t *testing.T) {
+	Prods := []products.Product{
+		products.NewDefaultProduct("A1", products.Grain),
+		products.NewProduct("A2", products.Grain, false, products.Liked),
+		products.NewDefaultProduct("R1", products.Grain),
+	}
+
+	expectedScoreProds := []float64{
+		2.0,
+		2.5,
+		0.0}
+
+	var Prod3SQLID products.ProductID = 3
+
+	db := setupDB(t)
+	defer db.Close()
+	for _, elem := range Prods {
+		insertDB(t, db, elem)
+	}
+
+	prod3, err := SelectProductByID(db, Prod3SQLID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := ManyResets(db, prod3); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := UpdateSelectionScore(db); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	prods, err := SelectAllProductsByCategory(db, products.Grain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for i, elem := range prods {
+		if elem.SelectionScore != expectedScoreProds[i] {
+			t.Errorf("expected score %f got %f", expectedScoreProds[i], elem.SelectionScore)
+		}
+	}
+}
+
+func TestDB_ResetScoreSuccess(t *testing.T) {
+	Prod1 := products.NewDefaultProduct("A1", products.Grain)
+	expectedScoreProd := -1.0
+
+	db := setupDB(t)
+	defer db.Close()
+
+	insertDB(t, db, Prod1)
+	prod1, err := SelectAllProductsByCategory(db, products.Grain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := ManyResets(db, prod1...); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	prods, err := SelectAllProductsByCategory(db, products.Grain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if prods[0].SelectionScore != expectedScoreProd {
+		t.Errorf("expected score %f got %f", expectedScoreProd, prods[0].SelectionScore)
+	}
+}
+
 // Errors path ///////////////////////////////////////////////
+
+func TestDb_UpdateSelectionScoreClosedDb(t *testing.T) {
+	Prod1 := products.NewDefaultProduct("A1", products.Grain)
+	db := setupDB(t)
+	insertDB(t, db, Prod1)
+
+	db.Close()
+
+	if err := UpdateSelectionScore(db); err == nil {
+		t.Fatalf("expected an error: %v", err)
+	}
+
+}
+
+func TestDb_ResetScoreClosedDb(t *testing.T) {
+	Prod1 := products.NewDefaultProduct("A1", products.Grain)
+	db := setupDB(t)
+	insertDB(t, db, Prod1)
+
+	prod1, err := SelectAllProductsByCategory(db, products.Grain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.Close()
+
+	if err := ManyResets(db, prod1...); err == nil {
+		t.Fatalf("expected an error: %v", err)
+	}
+}
+
+func TestDB_ResetScoreEmptyProds(t *testing.T) {
+	db := setupDB(t)
+	defer db.Close()
+
+	prod1, err := SelectAllProductsByCategory(db, products.Grain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := ManyResets(db, prod1...); err == nil {
+		t.Fatalf("expected an error: %v", err)
+	}
+}
+
 func TestDB_InsertEmptyName(t *testing.T) {
 	name := ""
 	category := products.Grain

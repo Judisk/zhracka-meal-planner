@@ -17,18 +17,19 @@ func TestGetProd_EmptyList(t *testing.T) {
 func TestGetProd_FixedSeed(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 
-	array := []products.Product{
-		{Name: "Рис", Category: products.Grain},
-		{Name: "Гречка", Category: products.Grain},
-		{Name: "Овес", Category: products.Grain},
+	g := []products.Product{
+		products.NewDefaultProduct("рис", products.Grain),
+		products.NewDefaultProduct("гречка", products.Grain),
+		products.NewDefaultProduct("овес", products.Grain),
 	}
-	prod, err := getProd(array, rng)
+	expectedName := "рис"
+	prod, err := getProd(g, rng)
 	if err != nil {
 		t.Fatalf("ошибка: %v", err)
 
 	}
-	if prod.Name != "Овес" {
-		t.Errorf("ожидали 'Овес' при сиде 42, получили %q", prod.Name)
+	if prod.Name != expectedName {
+		t.Errorf("ожидали %q при сиде 42, получили %q", expectedName, prod.Name)
 	}
 }
 
@@ -36,24 +37,23 @@ func TestGenerateDish_FixedSeed(t *testing.T) {
 	var seed uint64 = 42
 	rng := rand.New(rand.NewPCG(seed, 0))
 
-	expectedGrain := "овес"
-	expectedProtein := "яйцо"
-	expectedVegetable := "томат"
+	expectedGrain := "рис"
+	expectedProtein := "курица"
+	expectedVegetable := "огурец"
 	testName := "Test name"
 
 	g := []products.Product{
-
-		{Name: "рис", Category: products.Grain},
-		{Name: "гречка", Category: products.Grain},
-		{Name: "овес", Category: products.Grain},
+		products.NewDefaultProduct("рис", products.Grain),
+		products.NewDefaultProduct("гречка", products.Grain),
+		products.NewDefaultProduct("овес", products.Grain),
 	}
 	p := []products.Product{
-		{Name: "яйцо", Category: products.Protein},
-		{Name: "курица", Category: products.Protein},
+		products.NewDefaultProduct("яйцо", products.Protein),
+		products.NewDefaultProduct("курица", products.Protein),
 	}
 	v := []products.Product{
-		{Name: "огурец", Category: products.Vegetable},
-		{Name: "томат", Category: products.Vegetable},
+		products.NewDefaultProduct("огурец", products.Vegetable),
+		products.NewDefaultProduct("томат", products.Vegetable),
 	}
 
 	prod, err := GenerateDish(testName, g, p, v, rng)
@@ -62,16 +62,16 @@ func TestGenerateDish_FixedSeed(t *testing.T) {
 
 	}
 	if prod.Name != testName {
-		t.Errorf("ожидали '%s' при сиде %d, получили %q", testName, seed, prod.Name)
+		t.Errorf("ожидали %q при сиде %d, получили %q", testName, seed, prod.Name)
 	}
 	if prod.Grain.Name != expectedGrain {
-		t.Errorf("ожидали '%s' при сиде %d, получили %q", expectedGrain, seed, prod.Grain.Name)
+		t.Errorf("ожидали %q при сиде %d, получили %q", expectedGrain, seed, prod.Grain.Name)
 	}
 	if prod.Protein.Name != expectedProtein {
-		t.Errorf("ожидали '%s' при сиде %d, получили %q", expectedProtein, seed, prod.Protein.Name)
+		t.Errorf("ожидали %q при сиде %d, получили %q", expectedProtein, seed, prod.Protein.Name)
 	}
 	if prod.Vegetable.Name != expectedVegetable {
-		t.Errorf("ожидали '%s' при сиде %d, получили %q", expectedVegetable, seed, prod.Vegetable.Name)
+		t.Errorf("ожидали %q при сиде %d, получили %q", expectedVegetable, seed, prod.Vegetable.Name)
 	}
 
 }

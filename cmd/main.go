@@ -1,13 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 
-	d "foods/internal/dayone"
-	f "foods/internal/foodgenerator"
-	p "foods/internal/products"
+	"foods/internal/service"
 	s "foods/internal/storage"
 )
 
@@ -20,69 +17,15 @@ func main() {
 
 	defer db.Close()
 
-	if err := seedDefaultProductsIfEmpty(db); err != nil {
+	if err := service.SeedDefaultProductsIfEmpty(db); err != nil {
 		log.Fatal(err)
 	}
-	grains, err := s.SelectAllowedProductsByCategory(db, p.Grain)
-	if err != nil {
-		log.Fatal(err)
-	}
-	proteins, err := s.SelectAllowedProductsByCategory(db, p.Protein)
-	if err != nil {
-		log.Fatal(err)
-	}
-	vegetables, err := s.SelectAllowedProductsByCategory(db, p.Vegetable)
+
+	day, err := service.GenerateAndControlDay(db, 3, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	day, err := d.GenerateMeals(3, grains, proteins, vegetables, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
 	fmt.Println(day)
 
-	dish, err := f.GenerateDish("Test name #1", grains, proteins, vegetables, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(dish)
-}
-
-func seedDefaultProductsIfEmpty(db *sql.DB) error {
-	var count int
-
-	err := db.QueryRow("SELECT COUNT(*) FROM products").Scan(&count)
-	if err != nil {
-		return fmt.Errorf("count products: %w", err)
-	}
-
-	if count == 0 {
-		return insertDefaultProducts(db)
-	}
-
-	return nil
-}
-
-func insertDefaultProducts(db *sql.DB) error {
-
-	defaults := []p.Product{
-		p.NewDefaultProduct("рис", p.Grain),
-		p.NewDefaultProduct("овес", p.Grain),
-		p.NewDefaultProduct("гречка", p.Grain),
-
-		p.NewDefaultProduct("яйцо", p.Protein),
-		p.NewDefaultProduct("курица", p.Protein),
-
-		p.NewDefaultProduct("томат", p.Vegetable),
-		p.NewDefaultProduct("огурец", p.Vegetable),
-	}
-
-	for _, p := range defaults {
-		if err := s.InsertProduct(db, p); err != nil {
-			return fmt.Errorf("insert default product %q: %w", p.Name, err)
-		}
-	}
-
-	return nil
 }

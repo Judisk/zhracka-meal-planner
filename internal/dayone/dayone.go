@@ -12,17 +12,17 @@ type Day struct {
 }
 
 func GenerateMeals(n int, grains, proteins, vegetables []products.Product, rng *rand.Rand) (Day, error) {
-	arr := []f.Dish{}
+	prods := []f.Dish{}
 	for i := 0; i < n; {
 
 		dish, err := f.GenerateDish(namedMeals(i), grains, proteins, vegetables, rng)
 		if err != nil {
 			return Day{}, fmt.Errorf("generate meals: %w", err)
 		}
-		arr = append(arr, dish)
+		prods = append(prods, dish)
 		i++
 	}
-	return Day{arr}, nil
+	return Day{prods}, nil
 }
 
 func namedMeals(n int) string {
