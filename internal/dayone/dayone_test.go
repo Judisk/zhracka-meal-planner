@@ -6,15 +6,12 @@ import (
 	"testing"
 )
 
-func TestGenerateDay_FixedSeed(t *testing.T) {
-	var seed uint64 = 42
-	var testN = 4
-	rng := rand.New(rand.NewPCG(seed, 0))
-	arrayNamesMeals := []string{"Завтрак", "Обед", "Ужин", "Перекус 1"}
+func datasForTest() ([]string, []string, []string, []string, []products.Product, []products.Product, []products.Product) {
+	arrayNamesMeals := []string{"Завтрак", "Обед", "Ужин", "Перекус 1", "Перекус 2", "Перекус 3"}
 
-	expectedGrains := []string{"гречка", "овес", "рис", "тортилья"}
-	expectedProteins := []string{"арахис", "миндаль", "куриная печень", "соя"}
-	expectedVegetables := []string{"огурец", "томат", "спаржа", "оливки"}
+	expectedGrains := []string{"гречка", "овес", "рис", "тортилья", "перловая крупа", "фунчоза"}
+	expectedProteins := []string{"арахис", "миндаль", "куриная печень", "соя", "яйцо", "курица"}
+	expectedVegetables := []string{"огурец", "томат", "спаржа", "оливки", "зелень", "авокадо"}
 
 	g := []products.Product{
 		products.NewDefaultProduct("рис", products.Grain),
@@ -40,6 +37,14 @@ func TestGenerateDay_FixedSeed(t *testing.T) {
 		products.NewDefaultProduct("оливки", products.Vegetable),
 		products.NewDefaultProduct("зелень", products.Vegetable),
 	}
+	return arrayNamesMeals, expectedGrains, expectedProteins, expectedVegetables, g, p, v
+}
+func TestGenerateDay_FixedSeed_Success(t *testing.T) {
+	var seed uint64 = 42
+	var testN = 6
+	rng := rand.New(rand.NewPCG(seed, 0))
+
+	arrayNamesMeals, expectedGrains, expectedProteins, expectedVegetables, g, p, v := datasForTest()
 
 	day, err := GenerateMeals(testN, g, p, v, rng)
 	if err != nil {
@@ -64,4 +69,31 @@ func TestGenerateDay_FixedSeed(t *testing.T) {
 		}
 	}
 
+}
+
+func TestGenerateDay_FixedSeed_NExceedsProductCount(t *testing.T) {
+
+	var seed uint64 = 42
+	var testN = 7
+	rng := rand.New(rand.NewPCG(seed, 0))
+
+	_, _, _, _, g, p, v := datasForTest()
+
+	_, err := GenerateMeals(testN, g, p, v, rng)
+	if err == nil {
+		t.Errorf("ожидалась ошибка получили %v", err)
+	}
+
+}
+
+func TestGenerateDay_EmptyLists(t *testing.T) {
+
+	var seed uint64 = 42
+	var testN = 1
+	rng := rand.New(rand.NewPCG(seed, 0))
+	g, p, v := []products.Product{}, []products.Product{}, []products.Product{}
+	_, err := GenerateMeals(testN, g, p, v, rng)
+	if err == nil {
+		t.Errorf("ожидалась ошибка получили %v", err)
+	}
 }

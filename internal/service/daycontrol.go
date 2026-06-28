@@ -17,16 +17,16 @@ func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error
 		return dayone.Day{}, fmt.Errorf("generate and control day: %d must to positive", n)
 	}
 
-	grains, err := storage.SelectAllowedProductsByCategory(db, products.Grain)
+	grains, err := storage.SelectReadyProductsByCategory(db, products.Grain)
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
 	}
-	proteins, err := storage.SelectAllowedProductsByCategory(db, products.Protein)
+	proteins, err := storage.SelectReadyProductsByCategory(db, products.Protein)
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
 	}
 
-	vegetables, err := storage.SelectAllowedProductsByCategory(db, products.Vegetable)
+	vegetables, err := storage.SelectReadyProductsByCategory(db, products.Vegetable)
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
 	}

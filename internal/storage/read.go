@@ -97,13 +97,35 @@ func SelectAllProductsByCategory(db *sql.DB, category products.Category) ([]prod
 	return result, nil
 }
 
-func SelectAllowedProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
-	query := `
+func SelectReadyProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
+	q := `
+		SELECT id, name, category, banned, preference, selection_score
+		FROM products
+		WHERE category = ? AND banned = 0 AND selection_score > 0
+		ORDER BY id
+	`
+	result, err := selectQuerryAllowedProductsByCategory(db, category, q)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func SelectUnbannedProductsByCategory(db *sql.DB, category products.Category) ([]products.Product, error) {
+	q := `
 		SELECT id, name, category, banned, preference, selection_score
 		FROM products
 		WHERE category = ? AND banned = 0
 		ORDER BY id
 	`
+	result, err := selectQuerryAllowedProductsByCategory(db, category, q)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func selectQuerryAllowedProductsByCategory(db *sql.DB, category products.Category, query string) ([]products.Product, error) {
 
 	rows, err := db.Query(query, category)
 	if err != nil {

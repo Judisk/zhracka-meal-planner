@@ -146,7 +146,7 @@ func TestDB_SelectAllowedProductsSuccess(t *testing.T) {
 
 	insertDB(t, db, products.NewProduct(productsNames[3], category, bannedStatus, products.Neutral))
 
-	gotAllowedProducts, err := SelectAllowedProductsByCategory(db, category)
+	gotAllowedProducts, err := SelectUnbannedProductsByCategory(db, category)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
