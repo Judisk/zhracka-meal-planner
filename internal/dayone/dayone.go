@@ -7,6 +7,8 @@ import (
 	"math/rand/v2"
 )
 
+const maxErrorCount int = 10
+
 type Day struct {
 	Meals []f.Dish
 }
@@ -21,7 +23,7 @@ func GenerateMeals(n int, grains, proteins, vegetables []products.Product, banne
 			return Day{}, fmt.Errorf("generate meals: %w", err)
 		}
 		if err := validator(dish, banned); err != nil {
-			if errCount == 10 {
+			if errCount == maxErrorCount {
 				return Day{}, fmt.Errorf("generate meals: too many errors: %w", err)
 			}
 			errCount++
