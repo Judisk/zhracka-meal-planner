@@ -31,7 +31,12 @@ func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error
 		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
 	}
 
-	day, err := dayone.GenerateMeals(n, grains, proteins, vegetables, rng)
+	banned, err := storage.SelectBannedProducts(db)
+	if err != nil {
+		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
+	}
+
+	day, err := dayone.GenerateMeals(n, grains, proteins, vegetables, banned, rng)
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 )
 
 func setupDB(t *testing.T) *sql.DB {
+	t.Helper()
 	db, err := storage.NewDB(":memory:")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -17,6 +18,7 @@ func setupDB(t *testing.T) *sql.DB {
 }
 
 func setupDBAndRand(t *testing.T) (*sql.DB, *rand.Rand) {
+	t.Helper()
 	return setupDB(t), rand.New(rand.NewPCG(42, 0))
 }
 

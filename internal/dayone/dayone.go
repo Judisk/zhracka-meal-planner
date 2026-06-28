@@ -11,13 +11,21 @@ type Day struct {
 	Meals []f.Dish
 }
 
-func GenerateMeals(n int, grains, proteins, vegetables []products.Product, rng *rand.Rand) (Day, error) {
+func GenerateMeals(n int, grains, proteins, vegetables []products.Product, banned products.BlockedProducts, rng *rand.Rand) (Day, error) {
 	prods := []f.Dish{}
+	errCount := 0
 	for i := 0; i < n; {
 
 		dish, err := f.GenerateDish(namedMeals(i), grains, proteins, vegetables, rng)
 		if err != nil {
 			return Day{}, fmt.Errorf("generate meals: %w", err)
+		}
+		if err := validator(dish, banned); err != nil {
+			if errCount == 10 {
+				return Day{}, fmt.Errorf("generate meals: too many errors: %w", err)
+			}
+			errCount++
+			continue
 		}
 		grains, proteins, vegetables = filterUsedProducts(grains, proteins, vegetables, dish)
 		prods = append(prods, dish)

@@ -9,6 +9,7 @@ import (
 
 // Helpers
 func setupDB(t *testing.T) *sql.DB {
+	t.Helper()
 	db, err := NewDB(":memory:")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -17,6 +18,7 @@ func setupDB(t *testing.T) *sql.DB {
 }
 
 func insertDB(t *testing.T, db *sql.DB, p products.Product) {
+	t.Helper()
 	err := InsertProduct(db, p)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

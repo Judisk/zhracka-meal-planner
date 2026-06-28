@@ -46,7 +46,7 @@ func TestGenerateDay_FixedSeed_Success(t *testing.T) {
 
 	arrayNamesMeals, expectedGrains, expectedProteins, expectedVegetables, g, p, v := datasForTest()
 
-	day, err := GenerateMeals(testN, g, p, v, rng)
+	day, err := GenerateMeals(testN, g, p, v, products.BlockedProducts{}, rng)
 	if err != nil {
 		t.Fatalf("ошибка: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestGenerateDay_FixedSeed_NExceedsProductCount(t *testing.T) {
 
 	_, _, _, _, g, p, v := datasForTest()
 
-	_, err := GenerateMeals(testN, g, p, v, rng)
+	_, err := GenerateMeals(testN, g, p, v, products.BlockedProducts{}, rng)
 	if err == nil {
 		t.Errorf("ожидалась ошибка получили %v", err)
 	}
@@ -92,7 +92,7 @@ func TestGenerateDay_EmptyLists(t *testing.T) {
 	var testN = 1
 	rng := rand.New(rand.NewPCG(seed, 0))
 	g, p, v := []products.Product{}, []products.Product{}, []products.Product{}
-	_, err := GenerateMeals(testN, g, p, v, rng)
+	_, err := GenerateMeals(testN, g, p, v, products.BlockedProducts{}, rng)
 	if err == nil {
 		t.Errorf("ожидалась ошибка получили %v", err)
 	}
