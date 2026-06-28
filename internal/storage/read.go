@@ -104,7 +104,7 @@ func SelectReadyProductsByCategory(db *sql.DB, category products.Category) ([]pr
 		WHERE category = ? AND banned = 0 AND selection_score > 0
 		ORDER BY id
 	`
-	result, err := selectQuerryAllowedProductsByCategory(db, category, q)
+	result, err := selectQueryProductsByCategory(db, category, q)
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +118,14 @@ func SelectUnbannedProductsByCategory(db *sql.DB, category products.Category) ([
 		WHERE category = ? AND banned = 0
 		ORDER BY id
 	`
-	result, err := selectQuerryAllowedProductsByCategory(db, category, q)
+	result, err := selectQueryProductsByCategory(db, category, q)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func selectQuerryAllowedProductsByCategory(db *sql.DB, category products.Category, query string) ([]products.Product, error) {
+func selectQueryProductsByCategory(db *sql.DB, category products.Category, query string) ([]products.Product, error) {
 
 	rows, err := db.Query(query, category)
 	if err != nil {
