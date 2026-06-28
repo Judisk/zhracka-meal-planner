@@ -10,6 +10,13 @@ import (
 )
 
 func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
+	if n > 6 {
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d too much meals for 1 day", n)
+	}
+	if n <= 0 {
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d must to positive", n)
+	}
+
 	grains, err := storage.SelectAllowedProductsByCategory(db, products.Grain)
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
@@ -32,8 +39,12 @@ func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error
 	for _, elem := range day.Meals {
 		arr = append(arr, elem.Grain, elem.Protein, elem.Vegetable)
 	}
+
 	if err := storage.ManyResets(db, arr...); err != nil {
-		return dayone.Day{}, fmt.Errorf("controle day: %w", err)
+		return dayone.Day{}, fmt.Errorf("reset scores: %w", err)
+	}
+	if err := storage.UpdateSelectionScore(db); err != nil {
+		return dayone.Day{}, fmt.Errorf("update scores: %w", err)
 	}
 	return day, nil
 }

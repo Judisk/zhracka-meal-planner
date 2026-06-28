@@ -12,22 +12,33 @@ func TestGenerateDay_FixedSeed(t *testing.T) {
 	rng := rand.New(rand.NewPCG(seed, 0))
 	arrayNamesMeals := []string{"Завтрак", "Обед", "Ужин", "Перекус 1"}
 
-	expectedGrains := []string{"рис", "рис", "рис", "рис"}
-	expectedProteins := []string{"курица", "курица", "курица", "курица"}
-	expectedVegetables := []string{"огурец", "огурец", "огурец", "огурец"}
+	expectedGrains := []string{"гречка", "овес", "рис", "тортилья"}
+	expectedProteins := []string{"арахис", "миндаль", "куриная печень", "соя"}
+	expectedVegetables := []string{"огурец", "томат", "спаржа", "оливки"}
 
 	g := []products.Product{
 		products.NewDefaultProduct("рис", products.Grain),
 		products.NewDefaultProduct("гречка", products.Grain),
 		products.NewDefaultProduct("овес", products.Grain),
+		products.NewDefaultProduct("тортилья", products.Grain),
+		products.NewDefaultProduct("фунчоза", products.Grain),
+		products.NewDefaultProduct("перловая крупа", products.Grain),
 	}
 	p := []products.Product{
 		products.NewDefaultProduct("яйцо", products.Protein),
 		products.NewDefaultProduct("курица", products.Protein),
+		products.NewDefaultProduct("соя", products.Protein),
+		products.NewDefaultProduct("арахис", products.Protein),
+		products.NewDefaultProduct("миндаль", products.Protein),
+		products.NewDefaultProduct("куриная печень", products.Protein),
 	}
 	v := []products.Product{
 		products.NewDefaultProduct("огурец", products.Vegetable),
 		products.NewDefaultProduct("томат", products.Vegetable),
+		products.NewDefaultProduct("спаржа", products.Vegetable),
+		products.NewDefaultProduct("авокадо", products.Vegetable),
+		products.NewDefaultProduct("оливки", products.Vegetable),
+		products.NewDefaultProduct("зелень", products.Vegetable),
 	}
 
 	day, err := GenerateMeals(testN, g, p, v, rng)

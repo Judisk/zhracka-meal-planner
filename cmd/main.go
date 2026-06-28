@@ -3,12 +3,18 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand/v2"
+	"time"
 
 	"foods/internal/service"
 	s "foods/internal/storage"
 )
 
 func main() {
+	rng := rand.New(rand.NewPCG(
+		uint64(time.Now().UnixNano()),
+		uint64(time.Now().UnixNano()>>32),
+	))
 
 	db, err := s.NewDB("products.db")
 	if err != nil {
@@ -21,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	day, err := service.GenerateAndControlDay(db, 3, nil)
+	day, err := service.GenerateAndControlDay(db, 3, rng)
 	if err != nil {
 		log.Fatal(err)
 	}
