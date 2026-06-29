@@ -66,7 +66,7 @@ func TestDB_DeleteSuccess(t *testing.T) {
 
 }
 
-func TestDB_SelectSuccess(t *testing.T) {
+func TestDB_SelectIDsSuccess(t *testing.T) {
 	name1 := "Test1"
 	name2 := "Test2"
 	expectedID := []products.ProductID{1, 2}
@@ -125,227 +125,152 @@ func TestDB_SelectSuccess(t *testing.T) {
 	}
 }
 
-func TestDB_SelectAllowedProductsSuccess(t *testing.T) {
+func TestDB_SelectsSuccess(t *testing.T) {
 
-	productsNames := []string{"T1", "T2", "T3", "B1"}
-	expectedIDs := []products.ProductID{1, 2, 3}
-	category := products.Grain
+	tests := []struct {
+		name        string
+		testNames   []string
+		queryFn     func(*sql.DB, products.Category) ([]products.Product, error)
+		expectedLen int
+		needAdd     bool
+	}{{
+		name:        "Allowed Products",
+		testNames:   []string{"T1", "T2", "T3", "B1"},
+		queryFn:     SelectUnbannedProductsByCategory,
+		expectedLen: 3,
+		needAdd:     true,
+	}, {
+		name:        "All products",
+		testNames:   []string{"T1", "T2", "T3"},
+		queryFn:     SelectAllProductsByCategory,
+		expectedLen: 3,
+		needAdd:     false,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			expectedIDs := []products.ProductID{1, 2, 3}
+			category := products.Grain
+			expectedNotBanned := false
+			expectedPreference := products.Neutral
+			expectedSelectionScore := 1.0
 
-	expectedLen := len(productsNames) - 1
-	expectedNotBanned := false
-	expectedPreference := products.Neutral
-	expectedSelectionScore := 1.0
+			db := setupDB(t)
+			defer db.Close()
 
-	allowedStatus := false
-	bannedStatus := true
+			for i := range tt.expectedLen {
+				insertDB(t, db, products.NewDefaultProduct(tt.testNames[i], category))
+			}
+			if tt.needAdd {
+				insertDB(t, db, products.NewProduct(tt.testNames[tt.expectedLen], category, true, products.Neutral))
+			}
+			gotData, err := tt.queryFn(db, category)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(gotData) != tt.expectedLen {
+				t.Fatalf("expected %d products, got %d", tt.expectedLen, len(gotData))
+			}
 
-	db := setupDB(t)
-	defer db.Close()
+			for i, elem := range gotData {
+				if elem.ID != expectedIDs[i] {
+					t.Errorf("expected ID %d, got %d", expectedIDs[i], elem.ID)
+				}
 
-	for i := range expectedLen {
-		insertDB(t, db, products.NewProduct(productsNames[i], category, allowedStatus, products.Neutral))
-	}
+				if elem.Name != tt.testNames[i] {
+					t.Errorf("expected name %q, got %q", tt.testNames[i], elem.Name)
+				}
 
-	insertDB(t, db, products.NewProduct(productsNames[3], category, bannedStatus, products.Neutral))
+				if elem.Category != category {
+					t.Errorf("expected category %q, got %q", category, elem.Category)
+				}
 
-	gotAllowedProducts, err := SelectUnbannedProductsByCategory(db, category)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+				if elem.Banned != expectedNotBanned {
+					t.Errorf("expected banned %t, got %t", expectedNotBanned, elem.Banned)
+				}
 
-	if len(gotAllowedProducts) != expectedLen {
-		t.Fatalf("expected %d products, got %d", expectedLen, len(gotAllowedProducts))
-	}
-
-	for i, elem := range gotAllowedProducts {
-		if elem.ID != expectedIDs[i] {
-			t.Errorf("expected ID %d, got %d", expectedIDs[i], elem.ID)
-		}
-
-		if elem.Name != productsNames[i] {
-			t.Errorf("expected name %q, got %q", productsNames[i], elem.Name)
-		}
-
-		if elem.Category != category {
-			t.Errorf("expected category %q, got %q", category, elem.Category)
-		}
-
-		if elem.Banned != expectedNotBanned {
-			t.Errorf("expected banned %t, got %t", expectedNotBanned, elem.Banned)
-		}
-
-		if elem.Preference != expectedPreference {
-			t.Errorf("expected preference %f, got %f", expectedPreference, elem.Preference)
-		}
-		if elem.SelectionScore != expectedSelectionScore {
-			t.Errorf("expected selection_score %f, got %f", expectedSelectionScore, elem.SelectionScore)
-		}
-	}
-
-}
-
-func TestDB_SelectAllProductsSuccess(t *testing.T) {
-
-	productsNames := []string{"T1", "T2", "T3"}
-	expectedIDs := []products.ProductID{1, 2, 3}
-	category := products.Grain
-	expectedBanned := false
-	expectedPreference := products.Neutral
-	expectedSelectionScore := 1.0
-
-	db := setupDB(t)
-	defer db.Close()
-
-	for _, name := range productsNames {
-		insertDB(t, db, products.NewDefaultProduct(name, category))
-	}
-
-	gotProducts, err := SelectAllProductsByCategory(db, category)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(gotProducts) != len(productsNames) {
-		t.Fatalf("expected %d products, got %d", len(productsNames), len(gotProducts))
-	}
-
-	for i, elem := range gotProducts {
-		if elem.ID != expectedIDs[i] {
-			t.Errorf("expected ID %d, got %d", expectedIDs[i], elem.ID)
-		}
-
-		if elem.Name != productsNames[i] {
-			t.Errorf("expected name %q, got %q", productsNames[i], elem.Name)
-		}
-
-		if elem.Category != category {
-			t.Errorf("expected category %q, got %q", category, elem.Category)
-		}
-
-		if elem.Banned != expectedBanned {
-			t.Errorf("expected banned %t, got %t", expectedBanned, elem.Banned)
-		}
-
-		if elem.Preference != expectedPreference {
-			t.Errorf("expected preference %f, got %f", expectedPreference, elem.Preference)
-		}
-		if elem.SelectionScore != expectedSelectionScore {
-			t.Errorf("expected selection_score %f, got %f", expectedSelectionScore, elem.SelectionScore)
-		}
+				if elem.Preference != expectedPreference {
+					t.Errorf("expected preference %f, got %f", expectedPreference, elem.Preference)
+				}
+				if elem.SelectionScore != expectedSelectionScore {
+					t.Errorf("expected selection_score %f, got %f", expectedSelectionScore, elem.SelectionScore)
+				}
+			}
+		})
 	}
 }
 
-func TestDB_SelectBannedProductsCheckIDandNameSuccess(t *testing.T) {
-	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
-	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
+func TestDB_Table_SelectBannedProducts(t *testing.T) {
 
-	var expectedBannedID products.ProductID = 2
-	var expectedBannedName string = "b1"
+	tests := []struct {
+		name string
 
-	var unexpectedID products.ProductID = 1
-	var unexpectedName string = "a1"
+		expectedBannedID   products.ProductID
+		expectedBannedName string
 
-	db := setupDB(t)
-	defer db.Close()
+		idShouldExist   bool
+		nameShouldExist bool
+	}{
+		{name: "SelectBannedProductsCheckIDandNameSuccess",
 
-	insertDB(t, db, allowedProduct)
-	insertDB(t, db, bannedProduct)
+			expectedBannedID:   2,
+			expectedBannedName: "b1",
 
-	gotBannedProduct, err := SelectBannedProducts(db)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+			idShouldExist:   true,
+			nameShouldExist: true,
+		}, {
+			name: "SelectBannedProductsCheckFalseIDandTrueNameSuccess",
+
+			expectedBannedID:   22,
+			expectedBannedName: "b1",
+
+			idShouldExist:   false,
+			nameShouldExist: true,
+		}, {
+			name: "SelectBannedProductsCheckTrueIDandFalseNameSuccess",
+
+			expectedBannedID:   2,
+			expectedBannedName: "b11",
+
+			idShouldExist:   true,
+			nameShouldExist: false,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	if !gotBannedProduct.ByID[expectedBannedID] {
-		t.Errorf("expected banned product id %d to be present in ByID", expectedBannedID)
-	}
+			allowedProduct := products.NewDefaultProduct("A1", products.Grain)
+			bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
 
-	if !gotBannedProduct.ByName[expectedBannedName] {
-		t.Errorf("expected banned product name %q to be present in ByName", expectedBannedName)
-	}
+			var unexpectedID products.ProductID = 1
+			var unexpectedName string = "a1"
 
-	if gotBannedProduct.ByID[unexpectedID] {
-		t.Errorf("unexpected allowed product id %d to be present in ByID", unexpectedID)
-	}
+			db := setupDB(t)
+			defer db.Close()
 
-	if gotBannedProduct.ByName[unexpectedName] {
-		t.Errorf("unexpected allowed product name %q to be present in ByName", unexpectedName)
-	}
-}
+			insertDB(t, db, allowedProduct)
+			insertDB(t, db, bannedProduct)
 
-func TestDB_SelectBannedProductsCheckFalseIDandTrueNameSuccess(t *testing.T) {
-	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
-	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
+			gotBannedProduct, err := SelectBannedProducts(db)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if gotBannedProduct.ByID[tt.expectedBannedID] != tt.idShouldExist {
+				t.Errorf("expected banned product id %d to be present in ByID", tt.expectedBannedID)
+			}
 
-	var unexpectedBannedID products.ProductID = 22
-	var expectedBannedName string = "b1"
+			if gotBannedProduct.ByName[tt.expectedBannedName] != tt.nameShouldExist {
+				t.Errorf("expected banned product name %q to be present in ByName", tt.expectedBannedName)
+			}
 
-	var unexpectedID products.ProductID = 1
-	var unexpectedName string = "a1"
+			if gotBannedProduct.ByID[unexpectedID] {
+				t.Errorf("unexpected allowed product id %d to be present in ByID", unexpectedID)
+			}
 
-	db := setupDB(t)
-	defer db.Close()
+			if gotBannedProduct.ByName[unexpectedName] {
+				t.Errorf("unexpected allowed product name %q to be present in ByName", unexpectedName)
+			}
 
-	insertDB(t, db, allowedProduct)
-	insertDB(t, db, bannedProduct)
-
-	gotBannedProduct, err := SelectBannedProducts(db)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if gotBannedProduct.ByID[unexpectedBannedID] {
-		t.Errorf("expected unknown product id %d to be absent from ByID", unexpectedBannedID)
-	}
-
-	if !gotBannedProduct.ByName[expectedBannedName] {
-		t.Errorf("expected banned product name %q to be present in ByName", expectedBannedName)
-	}
-
-	if gotBannedProduct.ByID[unexpectedID] {
-		t.Errorf("unexpected allowed product id %d to be present in ByID", unexpectedID)
-	}
-
-	if gotBannedProduct.ByName[unexpectedName] {
-		t.Errorf("unexpected allowed product name %q to be present in ByName", unexpectedName)
-	}
-}
-
-func TestDB_SelectBannedProductsCheckTrueIDandFalseNameSuccess(t *testing.T) {
-	allowedProduct := products.NewDefaultProduct("A1", products.Grain)
-	bannedProduct := products.NewProduct("B1", products.Grain, true, products.Neutral)
-
-	var expectedBannedID products.ProductID = 2
-	var unexpectedBannedName string = "b11"
-
-	var unexpectedID products.ProductID = 1
-	var unexpectedName string = "a1"
-
-	db := setupDB(t)
-	defer db.Close()
-
-	insertDB(t, db, allowedProduct)
-	insertDB(t, db, bannedProduct)
-
-	gotBannedProduct, err := SelectBannedProducts(db)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if !gotBannedProduct.ByID[expectedBannedID] {
-		t.Errorf("expected banned product id %d to be present in ByID", expectedBannedID)
-	}
-
-	if gotBannedProduct.ByName[unexpectedBannedName] {
-		t.Errorf("expected unknown product name %q to be absent from ByName", unexpectedBannedName)
-	}
-
-	if gotBannedProduct.ByID[unexpectedID] {
-		t.Errorf("unexpected allowed product id %d to be present in ByID", unexpectedID)
-	}
-
-	if gotBannedProduct.ByName[unexpectedName] {
-		t.Errorf("unexpected allowed product name %q to be present in ByName", unexpectedName)
+		})
 	}
 }
 
