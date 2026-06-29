@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"time"
 
+	"foods/internal/gui"
 	"foods/internal/service"
 	s "foods/internal/storage"
 )
@@ -34,4 +35,5 @@ func main() {
 
 	fmt.Println(day)
 
+	gui.Run(db)
 }

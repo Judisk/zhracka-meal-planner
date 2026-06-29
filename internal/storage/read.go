@@ -6,6 +6,40 @@ import (
 	"foods/internal/products"
 )
 
+func SelectAll(db *sql.DB) ([]products.Product, error) {
+	query := "SELECT id, name, category, banned, preference FROM products ORDER BY id"
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query execution: %w", err)
+	}
+
+	defer rows.Close()
+
+	var result []products.Product
+
+	for rows.Next() {
+		var p products.Product
+
+		if err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Category,
+			&p.Banned,
+			&p.Preference,
+		); err != nil {
+			return nil, fmt.Errorf("scan row: %w", err)
+		}
+		result = append(result, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration: %w", err)
+	}
+
+	return result, nil
+}
+
 func SelectProductIDsByCategory(db *sql.DB, category products.Category) ([]products.ProductID, error) {
 	query := "SELECT id FROM products WHERE category = ? ORDER BY id"
 
