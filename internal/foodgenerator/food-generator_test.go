@@ -1,6 +1,7 @@
 package foodgenerator
 
 import (
+	"errors"
 	"foods/internal/products"
 	"math/rand/v2"
 	"testing"
@@ -59,7 +60,6 @@ func TestGenerateDish_FixedSeed(t *testing.T) {
 	prod, err := GenerateDish(testName, g, p, v, rng)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-
 	}
 	if prod.Name != testName {
 		t.Errorf("expected %q with seed %d, got %q", testName, seed, prod.Name)
@@ -74,4 +74,18 @@ func TestGenerateDish_FixedSeed(t *testing.T) {
 		t.Errorf("expected %q with seed %d, got %q", expectedVegetable, seed, prod.Vegetable.Name)
 	}
 
+}
+
+func TestGeneratorDish_EmptyList(t *testing.T) {
+	var seed uint64 = 42
+	rng := rand.New(rand.NewPCG(seed, 0))
+	testName := "Test name"
+	g, p, v := []products.Product{}, []products.Product{}, []products.Product{}
+	_, err := GenerateDish(testName, g, p, v, rng)
+	if err == nil {
+		t.Fatalf("expected an error, got %v", err)
+	}
+	if !errors.Is(err, ErrEmptyProdList) {
+		t.Fatalf("expected an error %v, got %v", ErrEmptyProdList, err)
+	}
 }

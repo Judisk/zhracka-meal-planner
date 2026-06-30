@@ -1,6 +1,7 @@
 package dayone
 
 import (
+	"errors"
 	"fmt"
 	f "foods/internal/foodgenerator"
 	"foods/internal/products"
@@ -8,6 +9,10 @@ import (
 )
 
 const maxErrorCount int = 10
+
+var (
+	ErrTooManyErrors = errors.New("too many errors")
+)
 
 type Day struct {
 	Meals []f.Dish
@@ -24,7 +29,7 @@ func GenerateMeals(n int, grains, proteins, vegetables []products.Product, banne
 		}
 		if err := validator(dish, banned); err != nil {
 			if errCount == maxErrorCount {
-				return Day{}, fmt.Errorf("generate meals: too many errors: %w", err)
+				return Day{}, fmt.Errorf("generate meals: %w: %w", ErrTooManyErrors, err)
 			}
 			errCount++
 			continue

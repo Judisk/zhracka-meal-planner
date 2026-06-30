@@ -343,34 +343,75 @@ func TestDB_ResetScoreSuccess(t *testing.T) {
 }
 
 // Errors path ///////////////////////////////////////////////
+var closedDBMsg = "database is closed"
 
-func TestDb_UpdateSelectionScoreClosedDb(t *testing.T) {
-	Prod1 := products.NewDefaultProduct("A1", products.Grain)
-	db := setupDB(t)
-	insertDB(t, db, Prod1)
+func TestDB_Table_ClosedDB(t *testing.T) {
+	tests := []struct {
+		name          string
+		fn            func(*sql.DB) error
+		helperInsert  bool
+		defaultOpenDB bool
+	}{
+		{name: "Update",
+			fn: func(db *sql.DB) error {
+				return UpdateSelectionScore(db)
+			},
+			helperInsert:  true,
+			defaultOpenDB: true,
+		},
+		{name: "Insert",
+			fn: func(db *sql.DB) error {
+				return InsertProduct(db, products.NewDefaultProduct("Test Name", products.Grain))
+			},
+			helperInsert:  false,
+			defaultOpenDB: true,
+		},
+		{name: "Delete",
+			fn: func(db *sql.DB) error {
+				return DeleteProductsByName(db, "Test")
+			},
+			helperInsert:  true,
+			defaultOpenDB: true,
+		},
+		{
+			name: "Resets",
+			fn: func(db *sql.DB) error {
+				Prod1 := products.NewDefaultProduct("A1", products.Grain)
+				db = setupDB(t)
+				insertDB(t, db, Prod1)
 
-	db.Close()
-
-	if err := UpdateSelectionScore(db); err == nil {
-		t.Fatalf("expected an error: %v", err)
+				prod1, err := SelectAllProductsByCategory(db, products.Grain)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				db.Close()
+				return ManyResets(db, prod1...)
+			},
+			helperInsert:  true,
+			defaultOpenDB: false,
+		},
 	}
 
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var db *sql.DB
+			if tt.defaultOpenDB {
+				Prod1 := products.NewDefaultProduct("A1", products.Grain)
+				db = setupDB(t)
+				if tt.helperInsert {
+					insertDB(t, db, Prod1)
+				}
+				db.Close()
+			}
 
-func TestDb_ResetScoreClosedDb(t *testing.T) {
-	Prod1 := products.NewDefaultProduct("A1", products.Grain)
-	db := setupDB(t)
-	insertDB(t, db, Prod1)
-
-	prod1, err := SelectAllProductsByCategory(db, products.Grain)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	db.Close()
-
-	if err := ManyResets(db, prod1...); err == nil {
-		t.Fatalf("expected an error: %v", err)
+			err := tt.fn(db)
+			if err == nil {
+				t.Fatalf("expected an error: %v", err)
+			}
+			if !strings.Contains(err.Error(), closedDBMsg) {
+				t.Fatalf("expected an error %v, got %v", closedDBMsg, err)
+			}
+		})
 	}
 }
 
@@ -426,24 +467,6 @@ func TestDB_SelectBannedProductsReturnsEmptyWhenNoBannedProducts(t *testing.T) {
 
 }
 
-func TestDB_InsertClosedDB(t *testing.T) {
-	name := "Test Name"
-	category := products.Grain
-	expectedError := "database is closed"
-
-	db := setupDB(t)
-	db.Close()
-
-	err := InsertProduct(db, products.NewDefaultProduct(name, category))
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	if !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("expected error to contain %q, got %v", expectedError, err)
-	}
-}
-
 func TestDB_SelectUnknownCategoryReturnsEmptyIDs(t *testing.T) {
 	unknownCategory := products.Category("testCat")
 	name := "Test Name"
@@ -496,20 +519,5 @@ func TestDB_DeleteNonExistentProduct(t *testing.T) {
 	}
 	if p.Name != name {
 		t.Errorf("product 'Test' was unexpectedly deleted or modified, got name: '%s'", p.Name)
-	}
-}
-
-func TestDB_DeleteProductsByNameClosedDB(t *testing.T) {
-	category := products.Grain
-	name := "Test"
-
-	db := setupDB(t)
-
-	insertDB(t, db, products.NewDefaultProduct(name, category))
-
-	db.Close()
-
-	if err := DeleteProductsByName(db, name); err == nil {
-		t.Fatal("expected error, got nil")
 	}
 }

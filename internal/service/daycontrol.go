@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"foods/internal/dayone"
 	"foods/internal/products"
@@ -9,12 +10,17 @@ import (
 	"math/rand/v2"
 )
 
+var (
+	ErrTooManyMeals = errors.New("is too many meals for one day")
+	ErrTooFewMeals  = errors.New("must be positive")
+)
+
 func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
 	if n > 6 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d is too many meals for one day", n)
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d %w", n, ErrTooManyMeals)
 	}
 	if n <= 0 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d must be positive", n)
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d %w", n, ErrTooFewMeals)
 	}
 
 	grains, err := storage.SelectReadyProductsByCategory(db, products.Grain)

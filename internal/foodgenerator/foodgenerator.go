@@ -1,9 +1,15 @@
 package foodgenerator
 
 import (
+	"errors"
 	"fmt"
 	"foods/internal/products"
 	"math/rand/v2"
+)
+
+var (
+	ErrEmptyProdList    = errors.New("empty product list")
+	ErrRandomCantChoice = errors.New("random choice did not select a product")
 )
 
 type Dish struct {
@@ -36,7 +42,7 @@ func GenerateDish(name string, grains, proteins, vegetables []products.Product, 
 
 func getProd(array []products.Product, rng *rand.Rand) (products.Product, error) {
 	if len(array) == 0 {
-		return products.Product{}, fmt.Errorf("getProd: empty product list")
+		return products.Product{}, fmt.Errorf("getProd: %w", ErrEmptyProdList)
 	}
 	var total float64
 	for _, p := range array {
@@ -49,5 +55,5 @@ func getProd(array []products.Product, rng *rand.Rand) (products.Product, error)
 			return p, nil
 		}
 	}
-	return products.Product{}, fmt.Errorf("getProd: random choice did not select a product")
+	return products.Product{}, fmt.Errorf("getProd: %w", ErrRandomCantChoice)
 }

@@ -1,6 +1,7 @@
 package dayone
 
 import (
+	"errors"
 	"foods/internal/products"
 	"math/rand/v2"
 	"testing"
@@ -83,7 +84,6 @@ func TestGenerateDay_FixedSeed_NExceedsProductCount(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected an error, got %v", err)
 	}
-
 }
 
 func TestGenerateDay_EmptyLists(t *testing.T) {
@@ -96,6 +96,7 @@ func TestGenerateDay_EmptyLists(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected an error, got %v", err)
 	}
+
 }
 
 func TestGenerateDay_FixedSeed_GetBannedError(t *testing.T) {
@@ -138,6 +139,9 @@ func TestGenerateDay_FixedSeed_GetBannedError(t *testing.T) {
 
 	if err == nil {
 		t.Errorf("expected an error, got %v", err)
+	}
+	if !errors.Is(err, ErrTooManyErrors) {
+		t.Fatalf("expected an error %v, got %v", ErrTooManyErrors, err)
 	}
 
 }
