@@ -21,26 +21,31 @@ func setupDBAndRand(t *testing.T) (*sql.DB, *rand.Rand) {
 	t.Helper()
 	return setupDB(t), rand.New(rand.NewPCG(42, 0))
 }
+func TestService_NOutOfCount(t *testing.T) {
+	tests := []struct {
+		name string
+		N    int
+	}{{
+		name: "n exceeds maximum",
+		N:    7,
+	}, {
+		name: "n is below minimum",
+		N:    0,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, rng := setupDBAndRand(t)
+			defer db.Close()
+			_, err := GenerateAndControlDay(db, tt.N, rng)
+			if err == nil {
+				t.Fatalf("expected an error, got %v", err)
+			}
+		})
 
-func TestService_NMoreMax(t *testing.T) {
-	N := 7
-	db, rng := setupDBAndRand(t)
-	defer db.Close()
-	_, err := GenerateAndControlDay(db, N, rng)
-	if err == nil {
-		t.Fatalf("expected an error get %v", err)
 	}
 }
 
-func TestService_NlessMin(t *testing.T) {
-	N := 0
-	db, rng := setupDBAndRand(t)
-	defer db.Close()
-	_, err := GenerateAndControlDay(db, N, rng)
-	if err == nil {
-		t.Fatalf("expected an error get %v", err)
-	}
-}
+// TODO: merge these tests into the table-driven test
 
 func TestService_GenerateAndControlDaySuccess(t *testing.T) {
 	db, rng := setupDBAndRand(t)
@@ -50,17 +55,17 @@ func TestService_GenerateAndControlDaySuccess(t *testing.T) {
 	usedProds := make(map[string]bool)
 
 	prods := []products.Product{
-		products.NewDefaultProduct("рис", products.Grain),
-		products.NewDefaultProduct("гречка", products.Grain),
-		products.NewDefaultProduct("овес", products.Grain),
+		products.NewDefaultProduct("rice", products.Grain),
+		products.NewDefaultProduct("buckwheat", products.Grain),
+		products.NewDefaultProduct("oats", products.Grain),
 
-		products.NewDefaultProduct("яйцо", products.Protein),
-		products.NewDefaultProduct("курица", products.Protein),
-		products.NewDefaultProduct("ветчина", products.Protein),
+		products.NewDefaultProduct("egg", products.Protein),
+		products.NewDefaultProduct("chicken", products.Protein),
+		products.NewDefaultProduct("ham", products.Protein),
 
-		products.NewDefaultProduct("зелень", products.Vegetable),
-		products.NewDefaultProduct("огурец", products.Vegetable),
-		products.NewDefaultProduct("томат", products.Vegetable),
+		products.NewDefaultProduct("herbs", products.Vegetable),
+		products.NewDefaultProduct("cucumber", products.Vegetable),
+		products.NewDefaultProduct("tomato", products.Vegetable),
 	}
 
 	for _, p := range prods {
@@ -124,16 +129,16 @@ func TestService_GenerateAndControlDayNMoreThanProds(t *testing.T) {
 	N := 3
 
 	prods := []products.Product{
-		products.NewDefaultProduct("рис", products.Grain),
-		products.NewDefaultProduct("гречка", products.Grain),
+		products.NewDefaultProduct("rice", products.Grain),
+		products.NewDefaultProduct("buckwheat", products.Grain),
 
-		products.NewDefaultProduct("яйцо", products.Protein),
-		products.NewDefaultProduct("курица", products.Protein),
-		products.NewDefaultProduct("ветчина", products.Protein),
+		products.NewDefaultProduct("egg", products.Protein),
+		products.NewDefaultProduct("chicken", products.Protein),
+		products.NewDefaultProduct("ham", products.Protein),
 
-		products.NewDefaultProduct("зелень", products.Vegetable),
-		products.NewDefaultProduct("огурец", products.Vegetable),
-		products.NewDefaultProduct("томат", products.Vegetable),
+		products.NewDefaultProduct("herbs", products.Vegetable),
+		products.NewDefaultProduct("cucumber", products.Vegetable),
+		products.NewDefaultProduct("tomato", products.Vegetable),
 	}
 
 	for _, p := range prods {

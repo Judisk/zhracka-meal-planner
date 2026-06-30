@@ -31,7 +31,7 @@ func defaultSizeTable(table *widget.Table) *widget.Table {
 func productsTable(db *sql.DB) (*widget.Table, error) {
 	data, err := service.GetList(db)
 	if err != nil {
-		return nil, fmt.Errorf("create list: %w", err)
+		return nil, fmt.Errorf("create product table: %w", err)
 	}
 	table := widget.NewTable(
 		func() (int, int) {
@@ -70,19 +70,19 @@ func productsTable(db *sql.DB) (*widget.Table, error) {
 				label.SetText(string(prod.Category))
 			case 3:
 				if prod.Banned {
-					label.SetText("Да")
+					label.SetText("Yes")
 				} else {
-					label.SetText("Нет")
+					label.SetText("No")
 				}
 
 			case 4:
 				switch prod.Preference {
 				case products.Neutral:
-					label.SetText("Нейтральный")
+					label.SetText("Neutral")
 				case products.Liked:
-					label.SetText("Любимый")
+					label.SetText("Liked")
 				case products.Disliked:
-					label.SetText("Нелюбимые")
+					label.SetText("Disliked")
 				}
 			}
 		})

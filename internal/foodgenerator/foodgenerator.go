@@ -49,5 +49,5 @@ func getProd(array []products.Product, rng *rand.Rand) (products.Product, error)
 			return p, nil
 		}
 	}
-	return products.Product{}, fmt.Errorf("getProd: after randomize r>0")
+	return products.Product{}, fmt.Errorf("getProd: random choice did not select a product")
 }

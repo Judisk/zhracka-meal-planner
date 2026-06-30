@@ -17,17 +17,17 @@ func optionsList(rightPanel *fyne.Container, db *sql.DB) *fyne.Container {
 }
 
 func allListButton(rightPanel *fyne.Container, db *sql.DB) *widget.Button {
-	return widget.NewButton("AllList", func() {
+	return widget.NewButton("All Products", func() {
 		productTableContainer, err := productsTable(db)
 		if err != nil {
-			//обработать ошибку гуишным способом
+			// TODO: handle the error in the GUI
 		}
 		rightPanel.Objects[0] = productTableContainer
 		rightPanel.Refresh()
 	})
 }
 func oneDayButton(rightPanel *fyne.Container, db *sql.DB) *widget.Button {
-	return widget.NewButton("1 day", func() {
+	return widget.NewButton("One Day", func() {
 		//rightPanel.Objects[0] = dayView
 		rightPanel.Refresh()
 	})

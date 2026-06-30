@@ -69,7 +69,7 @@ func ManyResets(db *sql.DB, prods ...products.Product) error {
 	}
 	for _, elem := range prods {
 		if err := ResetProductScore(tx, elem); err != nil {
-			return fmt.Errorf("many reserts: %w", err)
+			return fmt.Errorf("reset many products: %w", err)
 		}
 	}
 

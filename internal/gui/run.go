@@ -10,12 +10,12 @@ import (
 
 func Run(db *sql.DB) {
 	a := app.New()
-	w := a.NewWindow("Food app")
+	w := a.NewWindow("Food Planner")
 	w.Resize(fyne.NewSize(sumOfSize()+300, 500))
 
 	productTableContainer, err := productsTable(db)
 	if err != nil {
-		//обработать ошибку гуишным способом
+		// TODO: handle the error in the GUI
 	}
 	rightPanel := container.NewStack(productTableContainer)
 	optionListContainer := optionsList(rightPanel, db)

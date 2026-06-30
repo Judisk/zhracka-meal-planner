@@ -11,10 +11,10 @@ import (
 
 func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
 	if n > 6 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d too much meals for 1 day", n)
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d is too many meals for one day", n)
 	}
 	if n <= 0 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d must to positive", n)
+		return dayone.Day{}, fmt.Errorf("generate and control day: %d must be positive", n)
 	}
 
 	grains, err := storage.SelectReadyProductsByCategory(db, products.Grain)

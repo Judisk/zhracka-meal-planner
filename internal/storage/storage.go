@@ -28,7 +28,7 @@ func NewDB(path string) (*sql.DB, error) {
 `)
 	if err != nil {
 		db.Close()
-		return nil, fmt.Errorf("sql get result:%w", err)
+		return nil, fmt.Errorf("get SQL result: %w", err)
 	}
 	return db, nil
 }

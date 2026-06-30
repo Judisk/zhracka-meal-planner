@@ -12,7 +12,7 @@ func InsertProduct(db *sql.DB, p products.Product) error {
 
 	_, err := db.Exec(insertSQL, p.Name, p.Category, p.Banned, p.Preference)
 	if err != nil {
-		return fmt.Errorf("insert db:%w", err)
+		return fmt.Errorf("insert product: %w", err)
 	}
 	return nil
 }

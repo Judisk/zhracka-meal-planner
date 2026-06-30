@@ -39,13 +39,13 @@ func GenerateMeals(n int, grains, proteins, vegetables []products.Product, banne
 func namedMeals(n int) string {
 	switch n {
 	case 0:
-		return "Завтрак"
+		return "Breakfast"
 	case 1:
-		return "Обед"
+		return "Lunch"
 	case 2:
-		return "Ужин"
+		return "Dinner"
 	default:
-		return fmt.Sprintf("Перекус %d", n-2)
+		return fmt.Sprintf("Snack %d", n-2)
 	}
 
 }

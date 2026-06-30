@@ -134,13 +134,13 @@ func TestDB_SelectsSuccess(t *testing.T) {
 		expectedLen int
 		needAdd     bool
 	}{{
-		name:        "Allowed Products",
+		name:        "unbanned products",
 		testNames:   []string{"T1", "T2", "T3", "B1"},
 		queryFn:     SelectUnbannedProductsByCategory,
 		expectedLen: 3,
 		needAdd:     true,
 	}, {
-		name:        "All products",
+		name:        "all products",
 		testNames:   []string{"T1", "T2", "T3"},
 		queryFn:     SelectAllProductsByCategory,
 		expectedLen: 3,
@@ -210,7 +210,7 @@ func TestDB_Table_SelectBannedProducts(t *testing.T) {
 		idShouldExist   bool
 		nameShouldExist bool
 	}{
-		{name: "SelectBannedProductsCheckIDandNameSuccess",
+		{name: "id and name exist",
 
 			expectedBannedID:   2,
 			expectedBannedName: "b1",
@@ -218,7 +218,7 @@ func TestDB_Table_SelectBannedProducts(t *testing.T) {
 			idShouldExist:   true,
 			nameShouldExist: true,
 		}, {
-			name: "SelectBannedProductsCheckFalseIDandTrueNameSuccess",
+			name: "id missing and name exists",
 
 			expectedBannedID:   22,
 			expectedBannedName: "b1",
@@ -226,7 +226,7 @@ func TestDB_Table_SelectBannedProducts(t *testing.T) {
 			idShouldExist:   false,
 			nameShouldExist: true,
 		}, {
-			name: "SelectBannedProductsCheckTrueIDandFalseNameSuccess",
+			name: "id exists and name missing",
 
 			expectedBannedID:   2,
 			expectedBannedName: "b11",
@@ -254,12 +254,14 @@ func TestDB_Table_SelectBannedProducts(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if gotBannedProduct.ByID[tt.expectedBannedID] != tt.idShouldExist {
-				t.Errorf("expected banned product id %d to be present in ByID", tt.expectedBannedID)
+			gotIDExists := gotBannedProduct.ByID[tt.expectedBannedID]
+			if gotIDExists != tt.idShouldExist {
+				t.Errorf("ByID[%d] = %t, want %t", tt.expectedBannedID, gotIDExists, tt.idShouldExist)
 			}
 
-			if gotBannedProduct.ByName[tt.expectedBannedName] != tt.nameShouldExist {
-				t.Errorf("expected banned product name %q to be present in ByName", tt.expectedBannedName)
+			gotNameExists := gotBannedProduct.ByName[tt.expectedBannedName]
+			if gotNameExists != tt.nameShouldExist {
+				t.Errorf("ByName[%q] = %t, want %t", tt.expectedBannedName, gotNameExists, tt.nameShouldExist)
 			}
 
 			if gotBannedProduct.ByID[unexpectedID] {
