@@ -8,17 +8,17 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func optionsList(rightPanel *fyne.Container, db *sql.DB) *fyne.Container {
+func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window) *fyne.Container {
 	return container.NewVBox(
-		allListButton(rightPanel, db),
+		allListButton(rightPanel, db, w),
 		oneDayButton(rightPanel, db),
 		oneDishButton(rightPanel, db),
 	)
 }
 
-func allListButton(rightPanel *fyne.Container, db *sql.DB) *widget.Button {
+func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window) *widget.Button {
 	return widget.NewButton("All Products", func() {
-		productTableContainer, err := productsTable(db)
+		productTableContainer, err := productsTable(db, w, rightPanel)
 		if err != nil {
 			// TODO: handle the error in the GUI
 		}

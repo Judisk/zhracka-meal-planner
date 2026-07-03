@@ -6,19 +6,25 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 )
 
 func Run(db *sql.DB) {
 	a := app.New()
 	w := a.NewWindow("Food Planner")
 	w.Resize(fyne.NewSize(sumOfSize()+300, 500))
+	rightPanel := container.NewStack(widget.NewLabel("Loading..."))
 
-	productTableContainer, err := productsTable(db)
+	productTableContainer, err := productsTable(db, w, rightPanel)
 	if err != nil {
-		// TODO: handle the error in the GUI
+		dialog.ShowError(err, w)
+		return
 	}
-	rightPanel := container.NewStack(productTableContainer)
-	optionListContainer := optionsList(rightPanel, db)
+	rightPanel.Objects[0] = productTableContainer
+	rightPanel.Refresh()
+
+	optionListContainer := optionsList(rightPanel, db, w)
 	content := border(optionListContainer, rightPanel)
 	w.SetContent(content)
 	w.ShowAndRun()

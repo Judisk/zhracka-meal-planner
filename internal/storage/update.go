@@ -78,3 +78,12 @@ func ManyResets(db *sql.DB, prods ...products.Product) error {
 	}
 	return nil
 }
+
+func UpdateProductInfo(db *sql.DB, p products.Product) error {
+	query := "UPDATE products SET name=?, category=?, banned=?, preference=? WHERE id=?"
+	_, err := db.Exec(query, p.Name, p.Category, p.Banned, p.Preference, p.ID)
+	if err != nil {
+		return fmt.Errorf("update product info: %w", err)
+	}
+	return nil
+}

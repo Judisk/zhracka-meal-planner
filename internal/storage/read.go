@@ -7,7 +7,7 @@ import (
 )
 
 func SelectAll(db *sql.DB) ([]products.Product, error) {
-	query := "SELECT id, name, category, banned, preference FROM products ORDER BY id"
+	query := "SELECT id, name, category, banned, preference,selection_score FROM products ORDER BY id"
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -27,6 +27,7 @@ func SelectAll(db *sql.DB) ([]products.Product, error) {
 			&p.Category,
 			&p.Banned,
 			&p.Preference,
+			&p.SelectionScore,
 		); err != nil {
 			return nil, fmt.Errorf("scan row: %w", err)
 		}
