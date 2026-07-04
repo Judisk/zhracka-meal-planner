@@ -14,9 +14,9 @@ type Product struct {
 type Category string
 
 const (
-	Grain     Category = "grain"
-	Protein   Category = "protein"
-	Vegetable Category = "vegetable"
+	Grain     Category = "Grain"
+	Protein   Category = "Protein"
+	Vegetable Category = "Vegetable"
 )
 
 type PreferenceStatus float64

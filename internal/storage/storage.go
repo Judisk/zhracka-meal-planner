@@ -20,7 +20,7 @@ func NewDB(path string) (*sql.DB, error) {
     CREATE TABLE IF NOT EXISTS products (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         name            TEXT NOT NULL CHECK (trim(name) <> ''),
-        category        TEXT NOT NULL CHECK (category IN ('grain', 'protein', 'vegetable')),
+        category        TEXT NOT NULL CHECK (category IN ('Grain', 'Protein', 'Vegetable')),
         banned          INTEGER NOT NULL DEFAULT 0 CHECK (banned IN (0, 1)),
         preference      REAL NOT NULL DEFAULT 1.0 CHECK (preference IN (0.5, 1.0, 1.5)),
         selection_score REAL NOT NULL DEFAULT 1.0

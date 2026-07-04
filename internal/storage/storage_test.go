@@ -342,6 +342,43 @@ func TestDB_ResetScoreSuccess(t *testing.T) {
 	}
 }
 
+func TestDB_SelectAllFilteredSuccess(t *testing.T) {
+	db := setupDB(t)
+	defer db.Close()
+	expectedLen := 3
+	expectedCat := products.Protein
+	prods := []products.Product{
+		products.NewDefaultProduct("rice", products.Grain),
+		products.NewDefaultProduct("buckwheat", products.Grain),
+		products.NewDefaultProduct("oats", products.Grain),
+
+		products.NewDefaultProduct("egg", products.Protein),
+		products.NewDefaultProduct("chicken", products.Protein),
+		products.NewDefaultProduct("ham", products.Protein),
+
+		products.NewDefaultProduct("herbs", products.Vegetable),
+		products.NewDefaultProduct("cucumber", products.Vegetable),
+		products.NewDefaultProduct("tomato", products.Vegetable),
+	}
+	for _, p := range prods {
+		insertDB(t, db, p)
+	}
+
+	filtered, err := SelectAllFiltered(db, &expectedCat, nil, nil)
+	if err != nil {
+		t.Fatalf("unexpected error %v", err)
+	}
+	if len(filtered) != expectedLen {
+		t.Fatalf("expected %d products, got %d", expectedLen, len(filtered))
+	}
+	for _, elem := range filtered {
+		if elem.Category != expectedCat {
+			t.Errorf("exptected %q got %q", expectedCat, elem.Category)
+		}
+	}
+
+}
+
 // Errors path ///////////////////////////////////////////////
 var closedDBMsg = "database is closed"
 

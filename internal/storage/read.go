@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"foods/internal/products"
+	"strings"
 )
 
 func SelectAll(db *sql.DB) ([]products.Product, error) {
@@ -163,6 +164,61 @@ func SelectUnbannedProductsByCategory(db *sql.DB, category products.Category) ([
 func selectQueryProductsByCategory(db *sql.DB, category products.Category, query string) ([]products.Product, error) {
 
 	rows, err := db.Query(query, category)
+	if err != nil {
+		return nil, fmt.Errorf("query allowed products: %w", err)
+	}
+	defer rows.Close()
+
+	var result []products.Product
+
+	for rows.Next() {
+		var p products.Product
+
+		if err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.Category,
+			&p.Banned,
+			&p.Preference,
+			&p.SelectionScore,
+		); err != nil {
+			return nil, fmt.Errorf("scan allowed product row: %w", err)
+		}
+
+		result = append(result, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("allowed product row iteration: %w", err)
+	}
+
+	return result, nil
+}
+
+func SelectAllFiltered(db *sql.DB, category *products.Category, banned *bool, preference *products.PreferenceStatus) ([]products.Product, error) {
+	conditions := []string{}
+	args := []any{}
+
+	if category != nil {
+		conditions = append(conditions, "category = ?")
+		args = append(args, *category)
+	}
+	if banned != nil {
+		conditions = append(conditions, "banned = ?")
+		args = append(args, *banned)
+	}
+	if preference != nil {
+		conditions = append(conditions, "preference = ?")
+		args = append(args, *preference)
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	q := "SELECT id, name, category, banned, preference, selection_score FROM products " + where + " ORDER BY id"
+	rows, err := db.Query(q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query allowed products: %w", err)
 	}

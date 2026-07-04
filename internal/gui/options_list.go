@@ -5,22 +5,24 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
-func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window) *fyne.Container {
+func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state FiltredState) *fyne.Container {
 	return container.NewVBox(
-		allListButton(rightPanel, db, w),
+		allListButton(rightPanel, db, w, state),
 		oneDayButton(rightPanel, db),
 		oneDishButton(rightPanel, db),
 	)
 }
 
-func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window) *widget.Button {
+func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state FiltredState) *widget.Button {
 	return widget.NewButton("All Products", func() {
-		productTableContainer, err := productsTable(db, w, rightPanel)
+		productTableContainer, err := tableContainer(db, w, rightPanel, state)
 		if err != nil {
-			// TODO: handle the error in the GUI
+			dialog.ShowError(err, w)
+			return
 		}
 		rightPanel.Objects[0] = productTableContainer
 		rightPanel.Refresh()

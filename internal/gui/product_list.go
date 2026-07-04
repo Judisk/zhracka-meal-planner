@@ -10,8 +10,15 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
+
+type FiltredState struct {
+	CategoryState    *products.Category
+	BannedState      *bool
+	PreferencesState *products.PreferenceStatus
+}
 
 var sizes = []float32{50, 220, 100, 120, 80, 60, 60}
 
@@ -30,8 +37,25 @@ func defaultSizeTable(table *widget.Table) *widget.Table {
 	return table
 }
 
-func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container) (*widget.Table, error) {
-	data, err := service.GetList(db)
+func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) (*fyne.Container, error) {
+	table, err := productsTable(db, w, rightPanel, state)
+	if err != nil {
+		return nil, fmt.Errorf("create product table: %w", err)
+	}
+	addButton := widget.NewButton(
+		"ADD", func() {})
+	addButton.Importance = widget.HighImportance
+	addButton.OnTapped = func() {
+		AddButton(db, w, rightPanel, state)
+
+	}
+	header := headerFn()
+
+	return container.NewBorder(container.NewVBox(addButton, header), nil, nil, nil, table), nil
+}
+
+func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) (*widget.Table, error) {
+	data, err := service.GetListFiltered(db, state.CategoryState, state.BannedState, state.PreferencesState)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
 	}
@@ -39,7 +63,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container) (*widg
 
 	table = widget.NewTable(
 		func() (int, int) {
-			return len(data) + 1, 7
+			return len(data), 7
 		},
 		func() fyne.CanvasObject {
 			label := widget.NewLabel("")
@@ -56,29 +80,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container) (*widg
 			label.Hide()
 			button.Hide()
 
-			if id.Row == 0 {
-				label.Show()
-				switch id.Col {
-				case 0:
-					label.SetText("ID")
-				case 1:
-					label.SetText("Name")
-				case 2:
-					label.SetText("Category")
-				case 3:
-					label.SetText("Banned")
-
-				case 4:
-					label.SetText("Preference")
-				case 5:
-					label.SetText("Editing")
-				case 6:
-					label.SetText("Deleting")
-				}
-
-				return
-			}
-			prod := data[id.Row-1]
+			prod := data[id.Row]
 			switch id.Col {
 			case 0:
 				label.Show()
@@ -111,19 +113,21 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container) (*widg
 				button.Show()
 				button.SetText("Edit")
 				button.Importance = widget.WarningImportance
-				button.OnTapped = func() { EditingButton(db, w, rightPanel, prod) }
+				button.Refresh()
+				button.OnTapped = func() { EditingButton(db, w, rightPanel, prod, state) }
 			case 6:
 				button.Show()
 				button.SetText("Delete")
 				button.Importance = widget.DangerImportance
-				button.OnTapped = func() { DeleteConfirmButton(db, w, rightPanel, prod) }
+				button.Refresh()
+				button.OnTapped = func() { DeleteConfirmButton(db, w, rightPanel, prod, state) }
 			}
 		})
 
 	return defaultSizeTable(table), nil
 }
 
-func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui) {
+func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state FiltredState) {
 
 	dialog.ShowConfirm("Confirm", "Confirm Deleting?", func(b bool) {
 		if !b {
@@ -132,7 +136,7 @@ func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, 
 		if err := p.Delete(db); err != nil {
 			dialog.ShowError(err, w)
 		}
-		newTable, err := productsTable(db, w, rightPanel)
+		newTable, err := tableContainer(db, w, rightPanel, state)
 		if err != nil {
 			dialog.ShowError(err, w)
 			return
@@ -143,13 +147,13 @@ func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, 
 
 }
 
-func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui) {
+func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui, state FiltredState) {
 	p := prod.Prod
 
 	nameEntry := widget.NewEntry()
 	nameEntry.SetText(p.Name)
 
-	categorySelect := widget.NewSelect([]string{"grain", "protein", "vegetable"}, nil)
+	categorySelect := widget.NewSelect([]string{"Grain", "Protein", "Vegetable"}, nil)
 	categorySelect.SetSelected(string(p.Category))
 
 	textPref := ""
@@ -190,7 +194,7 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 			dialog.ShowError(err, w)
 			return
 		}
-		newTable, err := productsTable(db, w, rightPanel)
+		newTable, err := tableContainer(db, w, rightPanel, state)
 		if err != nil {
 			dialog.ShowError(err, w)
 			return
@@ -203,5 +207,121 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 	content := container.NewVBox(nameEntry, fields, saveButton)
 
 	dialog.ShowCustom("Editing", "Close", content, w)
+
+}
+
+func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) {
+	nameEntry := widget.NewEntry()
+	nameEntry.PlaceHolder = "Enter product name"
+
+	categorySelect := widget.NewSelect([]string{"Grain", "Protein", "Vegetable"}, nil)
+
+	preferenceSelect := widget.NewSelect([]string{"Liked", "Neutral", "Disliked"}, nil)
+
+	bannedDefault := false
+	bannedCheck := widget.NewCheck("Banned", nil)
+	bannedCheck.SetChecked(bannedDefault)
+
+	var d dialog.Dialog
+	saveButton := widget.NewButton("Save", func() {
+		var pref products.PreferenceStatus
+		switch preferenceSelect.Selected {
+		case "Liked":
+			pref = products.Liked
+		case "Neutral":
+			pref = products.Neutral
+		case "Disliked":
+			pref = products.Disliked
+		}
+		newProd := service.ProdsForGui{
+			Prod: products.Product{
+				Name:       nameEntry.Text,
+				Category:   products.Category(categorySelect.Selected),
+				Banned:     bannedCheck.Checked,
+				Preference: products.PreferenceStatus(pref),
+			},
+		}
+		if err := newProd.Add(db); err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		newTable, err := tableContainer(db, w, rightPanel, state)
+		if err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		rightPanel.Objects[0] = newTable
+		rightPanel.Refresh()
+		d.Hide()
+	})
+	fields := container.NewHBox(categorySelect, preferenceSelect, bannedCheck)
+	content := container.NewVBox(nameEntry, fields, saveButton)
+	d = dialog.NewCustom("Add", "Close", content, w)
+	d.Show()
+
+}
+
+func headerFn() *fyne.Container {
+	headers := []string{"ID", "Name", "Category", "Banned", "Preference"}
+	widths := sizes[:5]
+	items := []fyne.CanvasObject{}
+	for i, text := range headers {
+		w := widths[i]
+		btn := widget.NewButton(text, func() {})
+		items = append(items, container.New(layout.NewGridWrapLayout(fyne.NewSize(w, 35)), btn))
+	}
+	return container.NewHBox(items...)
+}
+
+func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+	s := widget.NewSelect([]string{"Category", "Grain", "Protein", "Vegetable"}, func(selected string) {
+		newState := state
+		if selected == "All" {
+			newState.CategoryState = nil
+		} else {
+			cat := products.Category(selected)
+			newState.CategoryState = &cat
+		}
+		newContainer, err := tableContainer(db, w, rightPanel, state)
+		if err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		rightPanel.Objects[0] = newContainer
+		rightPanel.Refresh()
+	})
+	s.SetSelected("All")
+	return s
+
+}
+
+func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+	s := widget.NewSelect([]string{"Preference", "Liked", "Neutral", "Disliked"}, func(selected string) {
+		newState := state
+		if selected == "Preference" {
+			newState.PreferencesState = nil
+		} else {
+			var pref products.PreferenceStatus
+			switch selected {
+			case "Liked":
+				pref = products.Liked
+			case "Neutral":
+				pref = products.Neutral
+			case "Disliked":
+				pref = products.Disliked
+			}
+
+			newState.PreferencesState = &pref
+		}
+		newContainer, err := tableContainer(db, w, rightPanel, state)
+		if err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		rightPanel.Objects[0] = newContainer
+		rightPanel.Refresh()
+	})
+	s.SetSelected("Preference")
+	return s
 
 }

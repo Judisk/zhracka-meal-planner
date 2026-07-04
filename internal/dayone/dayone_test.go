@@ -111,29 +111,29 @@ func TestGenerateDay_FixedSeed_GetBannedError(t *testing.T) {
 	p = append(p, products.NewDefaultProduct("egg", products.Protein))
 	v = append(v, products.NewDefaultProduct("cucumber", products.Vegetable))
 
-	g = append(g, products.NewProduct("banned grain", products.Grain, true, products.Neutral))
-	p = append(p, products.NewProduct("banned protein", products.Protein, true, products.Neutral))
-	v = append(v, products.NewProduct("banned vegetable", products.Vegetable, true, products.Neutral))
+	g = append(g, products.NewProduct("banned Grain", products.Grain, true, products.Neutral))
+	p = append(p, products.NewProduct("banned Protein", products.Protein, true, products.Neutral))
+	v = append(v, products.NewProduct("banned Vegetable", products.Vegetable, true, products.Neutral))
 
-	g = append(g, products.NewProduct("banned grain1", products.Grain, true, products.Neutral))
-	p = append(p, products.NewProduct("banned protein1", products.Protein, true, products.Neutral))
-	v = append(v, products.NewProduct("banned vegetable1", products.Vegetable, true, products.Neutral))
+	g = append(g, products.NewProduct("banned Grain1", products.Grain, true, products.Neutral))
+	p = append(p, products.NewProduct("banned Protein1", products.Protein, true, products.Neutral))
+	v = append(v, products.NewProduct("banned Vegetable1", products.Vegetable, true, products.Neutral))
 
-	g = append(g, products.NewProduct("banned grain2", products.Grain, true, products.Neutral))
-	p = append(p, products.NewProduct("banned protein2", products.Protein, true, products.Neutral))
-	v = append(v, products.NewProduct("banned vegetable2", products.Vegetable, true, products.Neutral))
+	g = append(g, products.NewProduct("banned Grain2", products.Grain, true, products.Neutral))
+	p = append(p, products.NewProduct("banned Protein2", products.Protein, true, products.Neutral))
+	v = append(v, products.NewProduct("banned Vegetable2", products.Vegetable, true, products.Neutral))
 
-	g = append(g, products.NewProduct("banned grain3", products.Grain, true, products.Neutral))
-	p = append(p, products.NewProduct("banned protein3", products.Protein, true, products.Neutral))
-	v = append(v, products.NewProduct("banned vegetable3", products.Vegetable, true, products.Neutral))
+	g = append(g, products.NewProduct("banned Grain3", products.Grain, true, products.Neutral))
+	p = append(p, products.NewProduct("banned Protein3", products.Protein, true, products.Neutral))
+	v = append(v, products.NewProduct("banned Vegetable3", products.Vegetable, true, products.Neutral))
 
 	_, err := GenerateMeals(testN, g, p, v,
 		products.BlockedProducts{
 			ByName: map[string]bool{
-				"banned grain": true, "banned protein": true, "banned vegetable": true,
-				"banned grain1": true, "banned protein1": true, "banned vegetable1": true,
-				"banned grain2": true, "banned protein2": true, "banned vegetable2": true,
-				"banned grain3": true, "banned protein3": true, "banned vegetable3": true,
+				"banned Grain": true, "banned Protein": true, "banned Vegetable": true,
+				"banned Grain1": true, "banned Protein1": true, "banned Vegetable1": true,
+				"banned Grain2": true, "banned Protein2": true, "banned Vegetable2": true,
+				"banned Grain3": true, "banned Protein3": true, "banned Vegetable3": true,
 			},
 		}, rng)
 

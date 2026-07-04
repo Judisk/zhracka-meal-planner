@@ -28,3 +28,7 @@ func (p ProdsForGui) Delete(db *sql.DB) error {
 	}
 	return nil
 }
+
+func (p ProdsForGui) Add(db *sql.DB) error {
+	return storage.InsertProduct(db, p.Prod)
+}
