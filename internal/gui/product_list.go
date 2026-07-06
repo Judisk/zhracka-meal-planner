@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"foods/internal/products"
 	"foods/internal/service"
+	"sort"
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -18,6 +20,13 @@ type FiltredState struct {
 	CategoryState    *products.Category
 	BannedState      *bool
 	PreferencesState *products.PreferenceStatus
+
+	CategorySelected   string
+	BannedSelected     string
+	PreferenceSelected string
+
+	SortCol  string
+	SortDesc bool
 }
 
 var sizes = []float32{50, 220, 100, 120, 80, 60, 60}
@@ -49,7 +58,7 @@ func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 		AddButton(db, w, rightPanel, state)
 
 	}
-	header := headerFn()
+	header := headerFn(db, w, rightPanel, state)
 
 	return container.NewBorder(container.NewVBox(addButton, header), nil, nil, nil, table), nil
 }
@@ -58,6 +67,22 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 	data, err := service.GetListFiltered(db, state.CategoryState, state.BannedState, state.PreferencesState)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
+	}
+	switch state.SortCol {
+	case "id":
+		sort.Slice(data, func(i, j int) bool {
+			if state.SortDesc {
+				return data[i].Prod.ID > data[j].Prod.ID
+			}
+			return data[i].Prod.ID < data[j].Prod.ID
+		})
+	case "name":
+		sort.Slice(data, func(i, j int) bool {
+			if state.SortDesc {
+				return data[i].Prod.Name > data[j].Prod.Name
+			}
+			return data[i].Prod.Name < data[j].Prod.Name
+		})
 	}
 	var table *widget.Table
 
@@ -261,28 +286,56 @@ func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filt
 
 }
 
-func headerFn() *fyne.Container {
-	headers := []string{"ID", "Name", "Category", "Banned", "Preference"}
+func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *fyne.Container {
+
+	headers := []string{"ID", "Name"}
 	widths := sizes[:5]
 	items := []fyne.CanvasObject{}
+
 	for i, text := range headers {
-		w := widths[i]
-		btn := widget.NewButton(text, func() {})
-		items = append(items, container.New(layout.NewGridWrapLayout(fyne.NewSize(w, 35)), btn))
+
+		width := widths[i]
+		btn := widget.NewButton(text, func() {
+			newState := state
+			col := strings.ToLower(text)
+			if col == "id" || col == "name" {
+				if newState.SortCol == col {
+					newState.SortDesc = !newState.SortDesc
+				} else {
+					newState.SortCol = col
+					newState.SortDesc = false
+				}
+				newContainer, err := tableContainer(db, w, rightPanel, newState)
+				if err != nil {
+					dialog.ShowError(err, w)
+					return
+				}
+				rightPanel.Objects[0] = newContainer
+				rightPanel.Refresh()
+			}
+		})
+
+		items = append(items, container.New(layout.NewGridWrapLayout(fyne.NewSize(width, 35)), btn))
+
 	}
+	items = append(items, CategoryFilter(db, w, rightPanel, state))
+	items = append(items, preferenceFilter(db, w, rightPanel, state))
+	items = append(items, bannedFilter(db, w, rightPanel, state))
+	items = append(items, clearButton(db, w, rightPanel, state))
 	return container.NewHBox(items...)
 }
 
 func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
 	s := widget.NewSelect([]string{"Category", "Grain", "Protein", "Vegetable"}, func(selected string) {
 		newState := state
-		if selected == "All" {
+		if selected == "Category" {
 			newState.CategoryState = nil
 		} else {
 			cat := products.Category(selected)
 			newState.CategoryState = &cat
 		}
-		newContainer, err := tableContainer(db, w, rightPanel, state)
+		newState.CategorySelected = selected
+		newContainer, err := tableContainer(db, w, rightPanel, newState)
 		if err != nil {
 			dialog.ShowError(err, w)
 			return
@@ -290,9 +343,8 @@ func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 		rightPanel.Objects[0] = newContainer
 		rightPanel.Refresh()
 	})
-	s.SetSelected("All")
+	s.Selected = state.CategorySelected
 	return s
-
 }
 
 func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
@@ -313,7 +365,8 @@ func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, sta
 
 			newState.PreferencesState = &pref
 		}
-		newContainer, err := tableContainer(db, w, rightPanel, state)
+		newState.PreferenceSelected = selected
+		newContainer, err := tableContainer(db, w, rightPanel, newState)
 		if err != nil {
 			dialog.ShowError(err, w)
 			return
@@ -321,7 +374,62 @@ func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, sta
 		rightPanel.Objects[0] = newContainer
 		rightPanel.Refresh()
 	})
-	s.SetSelected("Preference")
+	s.Selected = state.PreferenceSelected
 	return s
 
+}
+
+func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+
+	s := widget.NewSelect([]string{"All", "Banned", "Allowed"}, func(selected string) {
+		newState := state
+		var banned bool = false
+		if selected == "All" {
+			newState.BannedState = nil
+
+		} else {
+			switch selected {
+			case "Allowed":
+				banned = false
+
+			case "Banned":
+				banned = true
+
+			}
+			newState.BannedState = &banned
+		}
+		newState.BannedSelected = selected
+		newContainer, err := tableContainer(db, w, rightPanel, newState)
+		if err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		rightPanel.Objects[0] = newContainer
+		rightPanel.Refresh()
+	})
+	s.Selected = state.BannedSelected
+	return s
+}
+
+func clearButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Button {
+	return widget.NewButton(
+		"Clear", func() {
+			newState := state
+			newState.CategoryState = nil
+			newState.BannedState = nil
+			newState.PreferencesState = nil
+			newState.CategorySelected = "Category"
+			newState.BannedSelected = "All"
+			newState.PreferenceSelected = "Preference"
+			newState.SortCol = ""
+			newState.SortDesc = false
+
+			newContainer, err := tableContainer(db, w, rightPanel, newState)
+			if err != nil {
+				dialog.ShowError(err, w)
+				return
+			}
+			rightPanel.Objects[0] = newContainer
+			rightPanel.Refresh()
+		})
 }

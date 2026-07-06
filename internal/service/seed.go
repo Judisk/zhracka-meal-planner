@@ -16,13 +16,13 @@ func SeedDefaultProductsIfEmpty(db *sql.DB) error {
 	}
 
 	if count == 0 {
-		return insertDefaultProducts(db)
+		return InsertDefaultProducts(db)
 	}
 
 	return nil
 }
 
-func insertDefaultProducts(db *sql.DB) error {
+func InsertDefaultProducts(db *sql.DB) error {
 
 	defaults := []products.Product{
 		// Grain / carbs

@@ -17,9 +17,12 @@ func Run(db *sql.DB) {
 	rightPanel := container.NewStack(widget.NewLabel("Loading..."))
 
 	state := FiltredState{
-		CategoryState:    nil,
-		BannedState:      nil,
-		PreferencesState: nil,
+		CategoryState:      nil,
+		BannedState:        nil,
+		PreferencesState:   nil,
+		CategorySelected:   "Category",
+		BannedSelected:     "All",
+		PreferenceSelected: "Preference",
 	}
 
 	productTableContainer, err := tableContainer(db, w, rightPanel, state)
