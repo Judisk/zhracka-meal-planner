@@ -2,6 +2,7 @@ package gui
 
 import (
 	"database/sql"
+	"math/rand/v2"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -9,11 +10,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state FiltredState) *fyne.Container {
+func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand.Rand, state FiltredState) *fyne.Container {
 	return container.NewVBox(
 		allListButton(rightPanel, db, w, state),
-		oneDayButton(rightPanel, db),
-		oneDishButton(rightPanel, db),
+		oneDayButton(rightPanel, db, w, rng),
+		oneDishButton(rightPanel, db, rng),
 	)
 }
 
@@ -28,14 +29,15 @@ func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state 
 		rightPanel.Refresh()
 	})
 }
-func oneDayButton(rightPanel *fyne.Container, db *sql.DB) *widget.Button {
+func oneDayButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand.Rand) *widget.Button {
 	return widget.NewButton("One Day", func() {
-		//rightPanel.Objects[0] = dayView
+		dayView := OneDayView(rightPanel, db, w, rng)
+		rightPanel.Objects[0] = dayView
 		rightPanel.Refresh()
 	})
 }
 
-func oneDishButton(rightPanel *fyne.Container, db *sql.DB) *widget.Button {
+func oneDishButton(rightPanel *fyne.Container, db *sql.DB, rng *rand.Rand) *widget.Button {
 	return widget.NewButton("One Dish", func() {
 		rightPanel.Refresh()
 	})

@@ -16,6 +16,18 @@ var (
 )
 
 func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
+	day, err := GenerateDay(db, n, rng)
+	if err != nil {
+		return dayone.Day{}, err
+	}
+
+	if err := ResetAndUpdateScore(db, day); err != nil {
+		return dayone.Day{}, err
+	}
+	return day, nil
+}
+
+func GenerateDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
 	if n > 6 {
 		return dayone.Day{}, fmt.Errorf("generate and control day: %d %w", n, ErrTooManyMeals)
 	}
@@ -46,16 +58,21 @@ func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error
 	if err != nil {
 		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}
+
+	return day, nil
+}
+
+func ResetAndUpdateScore(db *sql.DB, day dayone.Day) error {
 	arr := []products.Product{}
 	for _, elem := range day.Meals {
 		arr = append(arr, elem.Grain, elem.Protein, elem.Vegetable)
 	}
 
 	if err := storage.ManyResets(db, arr...); err != nil {
-		return dayone.Day{}, fmt.Errorf("reset scores: %w", err)
+		return fmt.Errorf("reset scores: %w", err)
 	}
 	if err := storage.UpdateSelectionScore(db); err != nil {
-		return dayone.Day{}, fmt.Errorf("update scores: %w", err)
+		return fmt.Errorf("update scores: %w", err)
 	}
-	return day, nil
+	return nil
 }

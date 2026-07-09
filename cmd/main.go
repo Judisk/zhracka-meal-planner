@@ -35,5 +35,5 @@ func main() {
 
 	fmt.Println(day)
 
-	gui.Run(db)
+	gui.Run(db, rng)
 }
