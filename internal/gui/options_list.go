@@ -14,7 +14,7 @@ func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *ran
 	return container.NewVBox(
 		allListButton(rightPanel, db, w, state),
 		oneDayButton(rightPanel, db, w, rng),
-		oneDishButton(rightPanel, db, rng),
+		oneDishButton(rightPanel, db, w, rng),
 	)
 }
 
@@ -37,8 +37,10 @@ func oneDayButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *ra
 	})
 }
 
-func oneDishButton(rightPanel *fyne.Container, db *sql.DB, rng *rand.Rand) *widget.Button {
+func oneDishButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand.Rand) *widget.Button {
 	return widget.NewButton("One Dish", func() {
+		dishView := OneDishView(rightPanel, db, w, rng)
+		rightPanel.Objects[0] = dishView
 		rightPanel.Refresh()
 	})
 }

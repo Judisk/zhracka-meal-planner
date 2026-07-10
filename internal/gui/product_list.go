@@ -60,7 +60,8 @@ func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 	}
 	header := headerFn(db, w, rightPanel, state)
 
-	return container.NewBorder(container.NewVBox(addButton, header), nil, nil, nil, table), nil
+	return container.NewBorder(header, nil, nil,
+		container.NewBorder(nil, addButton, nil, nil, nil), table), nil
 }
 
 func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) (*widget.Table, error) {
