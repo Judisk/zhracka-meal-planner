@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"foods/internal/gui"
+	"foods/internal/service"
 	s "foods/internal/storage"
 )
 
@@ -21,6 +22,10 @@ func main() {
 	}
 
 	defer db.Close()
+
+	if err := service.SeedDefaultProductsIfEmpty(db); err != nil {
+		log.Fatal(err)
+	}
 
 	gui.Run(db, rng)
 }
