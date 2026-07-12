@@ -29,18 +29,18 @@ type FilteredState struct {
 	SortDesc bool
 }
 
-var sizes = []float32{50, 220, 130, 130, 80, 80, 80}
+var columnWidths = []float32{50, 220, 130, 130, 80, 80, 80}
 
-func sumOfSize() float32 {
+func sumOfWidths() float32 {
 	var result float32
-	for _, elem := range sizes {
+	for _, elem := range columnWidths {
 		result += elem
 	}
 	return result
 }
 
-func defaultSizeTable(table *widget.Table) *widget.Table {
-	for i, elem := range sizes {
+func defaultWidthsTable(table *widget.Table) *widget.Table {
+	for i, elem := range columnWidths {
 		table.SetColumnWidth(i, float32(elem))
 	}
 	return table
@@ -89,7 +89,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 
 	table = widget.NewTable(
 		func() (int, int) {
-			return len(data), len(sizes)
+			return len(data), len(columnWidths)
 		},
 		func() fyne.CanvasObject {
 			label := widget.NewLabel("")
@@ -150,7 +150,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 			}
 		})
 
-	return defaultSizeTable(table), nil
+	return defaultWidthsTable(table), nil
 }
 
 func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state FilteredState) {
@@ -198,6 +198,7 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 	bannedCheck := widget.NewCheck("Banned", nil)
 	bannedCheck.SetChecked(p.Banned)
 
+	var d dialog.Dialog
 	saveButton := widget.NewButton("Save", func() {
 		var pref products.PreferenceStatus
 		switch preferenceSelect.Selected {
@@ -217,7 +218,7 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 				Preference: products.PreferenceStatus(pref),
 			},
 		}
-		if err := newProd.Edit(db); err != nil {
+		if err := newProd.Edit(db, prod.Prod.Banned); err != nil {
 			dialog.ShowError(err, w)
 			return
 		}
@@ -228,13 +229,14 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 		}
 		rightPanel.Objects[0] = newTable
 		rightPanel.Refresh()
+		d.Hide()
 	})
 
 	fields := container.NewHBox(categorySelect, preferenceSelect, bannedCheck)
 	content := container.NewVBox(nameEntry, fields, saveButton)
 
-	dialog.ShowCustom("Editing", "Close", content, w)
-
+	d = dialog.NewCustom("Editing", "Close", content, w)
+	d.Show()
 }
 
 func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) {
@@ -291,12 +293,11 @@ func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filt
 func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *fyne.Container {
 
 	headers := []string{"ID", "Name"}
-	widths := sizes[:5]
 	items := []fyne.CanvasObject{}
 
 	for i, text := range headers {
 
-		width := widths[i]
+		width := columnWidths[i]
 		btn := widget.NewButton(text, func() {
 			newState := state
 			col := strings.ToLower(text)

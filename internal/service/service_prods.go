@@ -11,9 +11,10 @@ type ProdsForGui struct {
 	Prod products.Product
 }
 
-func (p ProdsForGui) Edit(db *sql.DB) error {
+func (p ProdsForGui) Edit(db *sql.DB, wasBanned bool) error {
+	unbannedStatus := !p.Prod.Banned && wasBanned
 
-	if err := storage.UpdateProductInfo(db, p.Prod); err != nil {
+	if err := storage.UpdateProductInfo(db, p.Prod, unbannedStatus); err != nil {
 		return fmt.Errorf("edit product: %w", err)
 	}
 	return nil

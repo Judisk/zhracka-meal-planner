@@ -14,7 +14,7 @@ import (
 func Run(db *sql.DB, rng *rand.Rand) {
 	a := app.New()
 	w := a.NewWindow("Food Planner")
-	w.Resize(fyne.NewSize(sumOfSize()+300, 500))
+	w.Resize(fyne.NewSize(sumOfWidths()+300, 500))
 	rightPanel := container.NewStack(widget.NewLabel("Loading..."))
 
 	state := FilteredState{

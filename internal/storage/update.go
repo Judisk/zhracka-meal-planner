@@ -20,9 +20,7 @@ func UpdateSelectionScore(db *sql.DB) error {
 	SET selection_score = selection_score + preference
 	WHERE banned = 0 
 		AND selection_score >=1
-		AND selection_score < 12
 	`
-
 	updateSQLCooldown := `
 	UPDATE products
 	SET selection_score = selection_score + 1.0
@@ -80,9 +78,14 @@ func ManyResets(db *sql.DB, prods ...products.Product) error {
 	return nil
 }
 
-func UpdateProductInfo(db *sql.DB, p products.Product) error {
-	query := "UPDATE products SET name=?, category=?, banned=?, preference=? WHERE id=?"
-	_, err := db.Exec(query, p.Name, p.Category, p.Banned, p.Preference, p.ID)
+func UpdateProductInfo(db *sql.DB, p products.Product, unbannedStatus bool) error {
+	q := ""
+	if unbannedStatus {
+		q = ("UPDATE products SET name=?, category=?, banned=?, preference=?, selection_score = 1.0 WHERE id=?")
+	} else {
+		q = ("UPDATE products SET name=?, category=?, banned=?, preference=? WHERE id=?")
+	}
+	_, err := db.Exec(q, p.Name, p.Category, p.Banned, p.Preference, p.ID)
 	if err != nil {
 		return fmt.Errorf("update product info: %w", err)
 	}
