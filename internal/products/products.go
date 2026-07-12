@@ -1,5 +1,9 @@
 package products
 
+import (
+	"strings"
+)
+
 type ProductID int
 
 type Product struct {
@@ -28,8 +32,22 @@ const (
 )
 
 type BlockedProducts struct {
-	ByID   map[ProductID]bool
-	ByName map[string]bool
+	byID   map[ProductID]bool
+	byName map[string]bool
+}
+
+func (b BlockedProducts) ContainsID(id ProductID) bool {
+	return b.byID[id]
+}
+func (b BlockedProducts) ContainsName(name string) bool {
+	return b.byName[NormalizeProductName(name)]
+}
+func NewBlockedProducts(bannedByID map[ProductID]bool, rawNames []string) BlockedProducts {
+	byName := make(map[string]bool)
+	for _, name := range rawNames {
+		byName[NormalizeProductName(name)] = true
+	}
+	return BlockedProducts{byID: bannedByID, byName: byName}
 }
 
 func NewDefaultProduct(name string, category Category) Product {
@@ -44,4 +62,8 @@ func NewProduct(name string, category Category, banned bool, preference Preferen
 		Preference:     preference,
 		SelectionScore: 1.0,
 	}
+}
+
+func NormalizeProductName(name string) string {
+	return strings.ToLower(strings.TrimSpace(name))
 }

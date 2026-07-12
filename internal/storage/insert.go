@@ -8,9 +8,9 @@ import (
 
 func InsertProduct(db *sql.DB, p products.Product) error {
 
-	insertSQL := "INSERT INTO products (name, category, banned, preference) VALUES (?, ?, ?, ?)"
+	insertSQL := "INSERT INTO products (name, category, banned, preference, selection_score) VALUES (?, ?, ?, ?, ?)"
 
-	_, err := db.Exec(insertSQL, p.Name, p.Category, p.Banned, p.Preference)
+	_, err := db.Exec(insertSQL, p.Name, p.Category, p.Banned, p.Preference, p.SelectionScore)
 	if err != nil {
 		return fmt.Errorf("insert product: %w", err)
 	}

@@ -16,7 +16,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type FiltredState struct {
+type FilteredState struct {
 	CategoryState    *products.Category
 	BannedState      *bool
 	PreferencesState *products.PreferenceStatus
@@ -46,7 +46,7 @@ func defaultSizeTable(table *widget.Table) *widget.Table {
 	return table
 }
 
-func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) (*fyne.Container, error) {
+func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) (*fyne.Container, error) {
 	table, err := productsTable(db, w, rightPanel, state)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
@@ -64,7 +64,7 @@ func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 		container.NewBorder(nil, addButton, nil, nil, nil), table), nil
 }
 
-func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) (*widget.Table, error) {
+func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) (*widget.Table, error) {
 	data, err := service.GetListFiltered(db, state.CategoryState, state.BannedState, state.PreferencesState)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
@@ -89,7 +89,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 
 	table = widget.NewTable(
 		func() (int, int) {
-			return len(data), 7
+			return len(data), len(sizes)
 		},
 		func() fyne.CanvasObject {
 			label := widget.NewLabel("")
@@ -153,7 +153,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 	return defaultSizeTable(table), nil
 }
 
-func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state FiltredState) {
+func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state FilteredState) {
 
 	dialog.ShowConfirm("Confirm", "Confirm Deleting?", func(b bool) {
 		if !b {
@@ -174,7 +174,7 @@ func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, 
 
 }
 
-func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui, state FiltredState) {
+func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui, state FilteredState) {
 	p := prod.Prod
 
 	nameEntry := widget.NewEntry()
@@ -237,7 +237,7 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 
 }
 
-func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) {
+func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) {
 	nameEntry := widget.NewEntry()
 	nameEntry.PlaceHolder = "Enter product name"
 
@@ -288,7 +288,7 @@ func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filt
 
 }
 
-func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *fyne.Container {
+func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *fyne.Container {
 
 	headers := []string{"ID", "Name"}
 	widths := sizes[:5]
@@ -321,13 +321,13 @@ func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filtr
 
 	}
 	items = append(items, CategoryFilter(db, w, rightPanel, state))
-	items = append(items, preferenceFilter(db, w, rightPanel, state))
 	items = append(items, bannedFilter(db, w, rightPanel, state))
+	items = append(items, preferenceFilter(db, w, rightPanel, state))
 	items = append(items, clearButton(db, w, rightPanel, state))
 	return container.NewHBox(items...)
 }
 
-func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
 	s := widget.NewSelect([]string{"Category", "Grain", "Protein", "Vegetable"}, func(selected string) {
 		newState := state
 		if selected == "Category" {
@@ -349,7 +349,7 @@ func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 	return s
 }
 
-func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
 	s := widget.NewSelect([]string{"Preference", "Liked", "Neutral", "Disliked"}, func(selected string) {
 		newState := state
 		if selected == "Preference" {
@@ -381,7 +381,7 @@ func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, sta
 
 }
 
-func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Select {
+func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
 
 	s := widget.NewSelect([]string{"All", "Banned", "Allowed"}, func(selected string) {
 		newState := state
@@ -413,7 +413,7 @@ func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state F
 	return s
 }
 
-func clearButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FiltredState) *widget.Button {
+func clearButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Button {
 	return widget.NewButton(
 		"Clear", func() {
 			newState := state

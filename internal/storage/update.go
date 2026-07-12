@@ -56,6 +56,10 @@ func ResetProductScore(tx *sql.Tx, p products.Product) error {
 }
 
 func ManyResets(db *sql.DB, prods ...products.Product) error {
+	if len(prods) == 0 {
+		return fmt.Errorf("many resets: empty prods")
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -64,9 +68,6 @@ func ManyResets(db *sql.DB, prods ...products.Product) error {
 		_ = tx.Rollback()
 	}()
 
-	if len(prods) == 0 {
-		return fmt.Errorf("empty ids")
-	}
 	for _, elem := range prods {
 		if err := ResetProductScore(tx, elem); err != nil {
 			return fmt.Errorf("reset many products: %w", err)

@@ -2,7 +2,6 @@ package service
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"foods/internal/products"
 	"foods/internal/storage"
@@ -11,8 +10,6 @@ import (
 type ProdsForGui struct {
 	Prod products.Product
 }
-
-var ErrEmptyArgsForEditing = errors.New("zero arguments for editing")
 
 func (p ProdsForGui) Edit(db *sql.DB) error {
 

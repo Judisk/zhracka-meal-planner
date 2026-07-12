@@ -3,6 +3,7 @@ package gui
 import (
 	"database/sql"
 	"foods/internal/dayone"
+	"foods/internal/service"
 	"math/rand/v2"
 	"strconv"
 
@@ -39,7 +40,7 @@ func OneDayView(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand
 }
 
 func nSelector(state mealsState, w fyne.Window) *widget.Select {
-	s := widget.NewSelect([]string{"1", "2", "3", "4", "5", "6"}, func(selected string) {
+	s := widget.NewSelect(service.ConvertMinToMaxInString(service.MinMeals, service.MaxMeals), func(selected string) {
 		num, err := strconv.Atoi(selected)
 		if err != nil {
 			dialog.ShowError(err, w)
@@ -47,6 +48,7 @@ func nSelector(state mealsState, w fyne.Window) *widget.Select {
 		}
 		*state.n = num
 	})
+
 	s.Selected = strconv.Itoa(*state.n)
 	return s
 }

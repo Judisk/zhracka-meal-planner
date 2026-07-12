@@ -22,7 +22,6 @@ func GenerateMeals(n int, grains, proteins, vegetables []products.Product, banne
 	prods := []f.Dish{}
 	errCount := 0
 	for i := 0; i < n; {
-
 		dish, err := f.GenerateDish(namedMeals(i), grains, proteins, vegetables, rng)
 		if err != nil {
 			return Day{}, fmt.Errorf("generate meals: %w", err)

@@ -8,12 +8,26 @@ import (
 	"foods/internal/products"
 	"foods/internal/storage"
 	"math/rand/v2"
+	"strconv"
 )
 
 var (
-	ErrTooManyMeals = errors.New("is too many meals for one day")
-	ErrTooFewMeals  = errors.New("must be positive")
+	ErrTooManyMeals = errors.New("too many meals for one day")
+	ErrTooFewMeals  = errors.New("meals count must be positive")
 )
+
+const (
+	MaxMeals = 6
+	MinMeals = 1
+)
+
+func ConvertMinToMaxInString(min, max int) []string {
+	slice := make([]string, 0, max)
+	for i := min; i <= max; i++ {
+		slice = append(slice, strconv.Itoa(i))
+	}
+	return slice
+}
 
 func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
 	day, err := GenerateDay(db, n, rng)
@@ -28,30 +42,30 @@ func GenerateAndControlDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error
 }
 
 func GenerateDay(db *sql.DB, n int, rng *rand.Rand) (dayone.Day, error) {
-	if n > 6 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d %w", n, ErrTooManyMeals)
+	if n > MaxMeals {
+		return dayone.Day{}, fmt.Errorf("generate day: %d %w", n, ErrTooManyMeals)
 	}
-	if n <= 0 {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %d %w", n, ErrTooFewMeals)
+	if n < MinMeals {
+		return dayone.Day{}, fmt.Errorf("generate day: %d %w", n, ErrTooFewMeals)
 	}
 
 	grains, err := storage.SelectReadyProductsByCategory(db, products.Grain)
 	if err != nil {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
+		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}
 	proteins, err := storage.SelectReadyProductsByCategory(db, products.Protein)
 	if err != nil {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
+		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}
 
 	vegetables, err := storage.SelectReadyProductsByCategory(db, products.Vegetable)
 	if err != nil {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
+		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}
 
 	banned, err := storage.SelectBannedProducts(db)
 	if err != nil {
-		return dayone.Day{}, fmt.Errorf("generate and control day: %w", err)
+		return dayone.Day{}, fmt.Errorf("generate day: %w", err)
 	}
 
 	day, err := dayone.GenerateMeals(n, grains, proteins, vegetables, banned, rng)

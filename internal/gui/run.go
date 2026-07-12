@@ -17,7 +17,7 @@ func Run(db *sql.DB, rng *rand.Rand) {
 	w.Resize(fyne.NewSize(sumOfSize()+300, 500))
 	rightPanel := container.NewStack(widget.NewLabel("Loading..."))
 
-	state := FiltredState{
+	state := FilteredState{
 		CategoryState:      nil,
 		BannedState:        nil,
 		PreferencesState:   nil,

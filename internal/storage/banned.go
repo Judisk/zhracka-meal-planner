@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"foods/internal/products"
-	"strings"
 )
 
 func SelectBannedProducts(db *sql.DB) (products.BlockedProducts, error) {
@@ -16,10 +15,8 @@ func SelectBannedProducts(db *sql.DB) (products.BlockedProducts, error) {
 	}
 	defer rows.Close()
 
-	blocked := products.BlockedProducts{
-		ByID:   map[products.ProductID]bool{},
-		ByName: map[string]bool{},
-	}
+	byID := make(map[products.ProductID]bool)
+	byName := []string{}
 
 	for rows.Next() {
 		var id products.ProductID
@@ -32,10 +29,8 @@ func SelectBannedProducts(db *sql.DB) (products.BlockedProducts, error) {
 			return products.BlockedProducts{}, fmt.Errorf("scan row: %w", err)
 		}
 
-		name = normalizeProductName(name)
-
-		blocked.ByID[id] = true
-		blocked.ByName[name] = true
+		byID[id] = true
+		byName = append(byName, name)
 
 	}
 
@@ -43,10 +38,6 @@ func SelectBannedProducts(db *sql.DB) (products.BlockedProducts, error) {
 		return products.BlockedProducts{}, fmt.Errorf("row iteration: %w", err)
 	}
 
-	return blocked, nil
+	return products.NewBlockedProducts(byID, byName), nil
 
-}
-
-func normalizeProductName(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
 }

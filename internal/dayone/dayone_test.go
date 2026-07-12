@@ -127,15 +127,11 @@ func TestGenerateDay_FixedSeed_GetBannedError(t *testing.T) {
 	p = append(p, products.NewProduct("banned Protein3", products.Protein, true, products.Neutral))
 	v = append(v, products.NewProduct("banned Vegetable3", products.Vegetable, true, products.Neutral))
 
-	_, err := GenerateMeals(testN, g, p, v,
-		products.BlockedProducts{
-			ByName: map[string]bool{
-				"banned Grain": true, "banned Protein": true, "banned Vegetable": true,
-				"banned Grain1": true, "banned Protein1": true, "banned Vegetable1": true,
-				"banned Grain2": true, "banned Protein2": true, "banned Vegetable2": true,
-				"banned Grain3": true, "banned Protein3": true, "banned Vegetable3": true,
-			},
-		}, rng)
+	blocked := products.NewBlockedProducts(nil, []string{"banned Grain", "banned Protein", "banned Vegetable",
+		"banned Grain1", "banned Protein1", "banned Vegetable1",
+		"banned Grain2", "banned Protein2", "banned Vegetable2",
+		"banned Grain3", "banned Protein3", "banned Vegetable3"})
+	_, err := GenerateMeals(testN, g, p, v, blocked, rng)
 
 	if err == nil {
 		t.Errorf("expected an error, got %v", err)

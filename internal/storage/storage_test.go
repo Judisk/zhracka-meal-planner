@@ -254,22 +254,22 @@ func TestDB_Table_SelectBannedProducts(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			gotIDExists := gotBannedProduct.ByID[tt.expectedBannedID]
+			gotIDExists := gotBannedProduct.ContainsID(tt.expectedBannedID)
 			if gotIDExists != tt.idShouldExist {
-				t.Errorf("ByID[%d] = %t, want %t", tt.expectedBannedID, gotIDExists, tt.idShouldExist)
+				t.Errorf("ContainsID(%d) = %t, want %t", tt.expectedBannedID, gotIDExists, tt.idShouldExist)
 			}
 
-			gotNameExists := gotBannedProduct.ByName[tt.expectedBannedName]
+			gotNameExists := gotBannedProduct.ContainsName(tt.expectedBannedName)
 			if gotNameExists != tt.nameShouldExist {
-				t.Errorf("ByName[%q] = %t, want %t", tt.expectedBannedName, gotNameExists, tt.nameShouldExist)
+				t.Errorf("ContainsName(%q) = %t, want %t", tt.expectedBannedName, gotNameExists, tt.nameShouldExist)
 			}
 
-			if gotBannedProduct.ByID[unexpectedID] {
-				t.Errorf("unexpected allowed product id %d to be present in ByID", unexpectedID)
+			if gotBannedProduct.ContainsID(unexpectedID) {
+				t.Errorf("unexpectedly found allowed product ID %d in banned set", unexpectedID)
 			}
 
-			if gotBannedProduct.ByName[unexpectedName] {
-				t.Errorf("unexpected allowed product name %q to be present in ByName", unexpectedName)
+			if gotBannedProduct.ContainsName(unexpectedName) {
+				t.Errorf("unexpectedly found allowed product name %q in banned set", unexpectedName)
 			}
 
 		})
@@ -495,13 +495,12 @@ func TestDB_SelectBannedProductsReturnsEmptyWhenNoBannedProducts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(gotBannedProduct.ByName) != 0 {
-		t.Errorf("expected empty ByName map, got %d items", len(gotBannedProduct.ByName))
+	if gotBannedProduct.ContainsName("a1") {
+		t.Error("expected 'a1' to not be banned")
 	}
-	if len(gotBannedProduct.ByID) != 0 {
-		t.Errorf("expected empty ByID map, got %d items", len(gotBannedProduct.ByID))
+	if gotBannedProduct.ContainsID(1) {
+		t.Error("expected id 1 to not be banned")
 	}
-
 }
 
 func TestDB_SelectUnknownCategoryReturnsEmptyIDs(t *testing.T) {
