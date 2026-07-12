@@ -29,7 +29,7 @@ type FiltredState struct {
 	SortDesc bool
 }
 
-var sizes = []float32{50, 220, 100, 120, 80, 60, 60}
+var sizes = []float32{50, 220, 130, 130, 80, 80, 80}
 
 func sumOfSize() float32 {
 	var result float32
@@ -161,6 +161,7 @@ func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, 
 		}
 		if err := p.Delete(db); err != nil {
 			dialog.ShowError(err, w)
+			return
 		}
 		newTable, err := tableContainer(db, w, rightPanel, state)
 		if err != nil {
