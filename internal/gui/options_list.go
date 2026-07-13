@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand.Rand, state FilteredState) *fyne.Container {
+func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *rand.Rand, state *FilteredState) *fyne.Container {
 	return container.NewVBox(
 		allListButton(rightPanel, db, w, state),
 		oneDayButton(rightPanel, db, w, rng),
@@ -18,7 +18,7 @@ func optionsList(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, rng *ran
 	)
 }
 
-func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state FilteredState) *widget.Button {
+func allListButton(rightPanel *fyne.Container, db *sql.DB, w fyne.Window, state *FilteredState) *widget.Button {
 	return widget.NewButton("All Products", func() {
 		productTableContainer, err := tableContainer(db, w, rightPanel, state)
 		if err != nil {

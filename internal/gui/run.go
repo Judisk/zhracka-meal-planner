@@ -7,17 +7,15 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
-func Run(db *sql.DB, rng *rand.Rand) {
+func Run(db *sql.DB, rng *rand.Rand) error {
 	a := app.New()
 	w := a.NewWindow("Food Planner")
 	w.Resize(fyne.NewSize(sumOfWidths()+300, 500))
 	rightPanel := container.NewStack(widget.NewLabel("Loading..."))
-
-	state := FilteredState{
+	state := &FilteredState{
 		CategoryState:      nil,
 		BannedState:        nil,
 		PreferencesState:   nil,
@@ -28,8 +26,7 @@ func Run(db *sql.DB, rng *rand.Rand) {
 
 	productTableContainer, err := tableContainer(db, w, rightPanel, state)
 	if err != nil {
-		dialog.ShowError(err, w)
-		return
+		return err
 	}
 	rightPanel.Objects[0] = productTableContainer
 	rightPanel.Refresh()
@@ -38,4 +35,5 @@ func Run(db *sql.DB, rng *rand.Rand) {
 	content := border(optionListContainer, rightPanel)
 	w.SetContent(content)
 	w.ShowAndRun()
+	return nil
 }

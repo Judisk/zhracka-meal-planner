@@ -46,7 +46,7 @@ func defaultWidthsTable(table *widget.Table) *widget.Table {
 	return table
 }
 
-func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) (*fyne.Container, error) {
+func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) (*fyne.Container, error) {
 	table, err := productsTable(db, w, rightPanel, state)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
@@ -64,7 +64,7 @@ func tableContainer(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state
 		container.NewBorder(nil, addButton, nil, nil, nil), table), nil
 }
 
-func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) (*widget.Table, error) {
+func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) (*widget.Table, error) {
 	data, err := service.GetListFiltered(db, state.CategoryState, state.BannedState, state.PreferencesState)
 	if err != nil {
 		return nil, fmt.Errorf("create product table: %w", err)
@@ -153,7 +153,7 @@ func productsTable(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state 
 	return defaultWidthsTable(table), nil
 }
 
-func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state FilteredState) {
+func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, p service.ProdsForGui, state *FilteredState) {
 
 	dialog.ShowConfirm("Confirm", "Confirm Deleting?", func(b bool) {
 		if !b {
@@ -174,7 +174,7 @@ func DeleteConfirmButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, 
 
 }
 
-func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui, state FilteredState) {
+func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod service.ProdsForGui, state *FilteredState) {
 	p := prod.Prod
 
 	nameEntry := widget.NewEntry()
@@ -239,7 +239,7 @@ func EditingButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, prod s
 	d.Show()
 }
 
-func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) {
+func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) {
 	nameEntry := widget.NewEntry()
 	nameEntry.PlaceHolder = "Enter product name"
 
@@ -290,31 +290,25 @@ func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filt
 
 }
 
-func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *fyne.Container {
+func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) *fyne.Container {
 
 	headers := []string{"ID", "Name"}
 	items := []fyne.CanvasObject{}
-
+	tempState := *state
 	for i, text := range headers {
 
 		width := columnWidths[i]
 		btn := widget.NewButton(text, func() {
-			newState := state
+
 			col := strings.ToLower(text)
 			if col == "id" || col == "name" {
-				if newState.SortCol == col {
-					newState.SortDesc = !newState.SortDesc
+				if tempState.SortCol == col {
+					tempState.SortDesc = !tempState.SortDesc
 				} else {
-					newState.SortCol = col
-					newState.SortDesc = false
+					tempState.SortCol = col
+					tempState.SortDesc = false
 				}
-				newContainer, err := tableContainer(db, w, rightPanel, newState)
-				if err != nil {
-					dialog.ShowError(err, w)
-					return
-				}
-				rightPanel.Objects[0] = newContainer
-				rightPanel.Refresh()
+				applyStateOrRollback(db, w, rightPanel, state, &tempState)
 			}
 		})
 
@@ -328,33 +322,27 @@ func headerFn(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state Filte
 	return container.NewHBox(items...)
 }
 
-func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
+func CategoryFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) *widget.Select {
 	s := widget.NewSelect([]string{"Category", "Grain", "Protein", "Vegetable"}, func(selected string) {
-		newState := state
+		tempState := *state
 		if selected == "Category" {
-			newState.CategoryState = nil
+			tempState.CategoryState = nil
 		} else {
 			cat := products.Category(selected)
-			newState.CategoryState = &cat
+			tempState.CategoryState = &cat
 		}
-		newState.CategorySelected = selected
-		newContainer, err := tableContainer(db, w, rightPanel, newState)
-		if err != nil {
-			dialog.ShowError(err, w)
-			return
-		}
-		rightPanel.Objects[0] = newContainer
-		rightPanel.Refresh()
+		tempState.CategorySelected = selected
+		applyStateOrRollback(db, w, rightPanel, state, &tempState)
 	})
 	s.Selected = state.CategorySelected
 	return s
 }
 
-func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
+func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) *widget.Select {
 	s := widget.NewSelect([]string{"Preference", "Liked", "Neutral", "Disliked"}, func(selected string) {
-		newState := state
+		tempState := *state
 		if selected == "Preference" {
-			newState.PreferencesState = nil
+			tempState.PreferencesState = nil
 		} else {
 			var pref products.PreferenceStatus
 			switch selected {
@@ -366,73 +354,66 @@ func preferenceFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, sta
 				pref = products.Disliked
 			}
 
-			newState.PreferencesState = &pref
+			tempState.PreferencesState = &pref
 		}
-		newState.PreferenceSelected = selected
-		newContainer, err := tableContainer(db, w, rightPanel, newState)
-		if err != nil {
-			dialog.ShowError(err, w)
-			return
-		}
-		rightPanel.Objects[0] = newContainer
-		rightPanel.Refresh()
+		tempState.PreferenceSelected = selected
+		applyStateOrRollback(db, w, rightPanel, state, &tempState)
 	})
 	s.Selected = state.PreferenceSelected
 	return s
 
 }
 
-func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Select {
+func bannedFilter(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) *widget.Select {
 
 	s := widget.NewSelect([]string{"All", "Banned", "Allowed"}, func(selected string) {
-		newState := state
 		var banned bool = false
+		tempState := *state
 		if selected == "All" {
-			newState.BannedState = nil
+			tempState.BannedState = nil
 
 		} else {
 			switch selected {
 			case "Allowed":
 				banned = false
-
 			case "Banned":
 				banned = true
-
 			}
-			newState.BannedState = &banned
+			tempState.BannedState = &banned
 		}
-		newState.BannedSelected = selected
-		newContainer, err := tableContainer(db, w, rightPanel, newState)
-		if err != nil {
-			dialog.ShowError(err, w)
-			return
-		}
-		rightPanel.Objects[0] = newContainer
-		rightPanel.Refresh()
+		tempState.BannedSelected = selected
+		applyStateOrRollback(db, w, rightPanel, state, &tempState)
 	})
 	s.Selected = state.BannedSelected
 	return s
 }
 
-func clearButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state FilteredState) *widget.Button {
+func clearButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState) *widget.Button {
 	return widget.NewButton(
 		"Clear", func() {
-			newState := state
-			newState.CategoryState = nil
-			newState.BannedState = nil
-			newState.PreferencesState = nil
-			newState.CategorySelected = "Category"
-			newState.BannedSelected = "All"
-			newState.PreferenceSelected = "Preference"
-			newState.SortCol = ""
-			newState.SortDesc = false
+			tempState := *state
+			tempState.CategoryState = nil
+			tempState.BannedState = nil
+			tempState.PreferencesState = nil
+			tempState.CategorySelected = "Category"
+			tempState.BannedSelected = "All"
+			tempState.PreferenceSelected = "Preference"
+			tempState.SortCol = ""
+			tempState.SortDesc = false
 
-			newContainer, err := tableContainer(db, w, rightPanel, newState)
-			if err != nil {
-				dialog.ShowError(err, w)
-				return
-			}
-			rightPanel.Objects[0] = newContainer
-			rightPanel.Refresh()
+			applyStateOrRollback(db, w, rightPanel, state, &tempState)
 		})
+}
+
+func applyStateOrRollback(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *FilteredState, tempState *FilteredState) {
+	original := *state
+	*state = *tempState
+	newContainer, err := tableContainer(db, w, rightPanel, state)
+	if err != nil {
+		*state = original
+		dialog.ShowError(err, w)
+		return
+	}
+	rightPanel.Objects[0] = newContainer
+	rightPanel.Refresh()
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math/rand/v2"
+	"os"
 	"time"
 
 	"foods/internal/gui"
@@ -11,6 +12,12 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+}
+func run() error {
 	rng := rand.New(rand.NewPCG(
 		uint64(time.Now().UnixNano()),
 		uint64(time.Now().UnixNano()>>32),
@@ -18,14 +25,15 @@ func main() {
 
 	db, err := s.NewDB("products.db")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	defer db.Close()
 
 	if err := service.SeedDefaultProductsIfEmpty(db); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	gui.Run(db, rng)
+	return gui.Run(db, rng)
+
 }
