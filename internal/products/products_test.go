@@ -30,6 +30,11 @@ func TestNormalizeProductName_Table(t *testing.T) {
 			testText:     "              ",
 			expectedText: "",
 		},
+		{
+			name:         "trim and lowercase",
+			testText:     "  RICE  ",
+			expectedText: "rice",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -114,13 +119,15 @@ func TestNewBlockedProducts_Table(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			blockedProducts := NewBlockedProducts(tt.mapIDs, tt.rawNames)
 			for _, elem := range tt.expectedIDs {
-				if blockedProducts.ContainsID(elem.id) != elem.wanted {
-					t.Errorf("ContainsID(%d) = %t, want %t", elem.id, !elem.wanted, elem.wanted)
+				got := blockedProducts.ContainsID(elem.id)
+				if got != elem.wanted {
+					t.Errorf("ContainsID(%d) = %t, want %t", elem.id, got, elem.wanted)
 				}
 			}
 			for _, elem := range tt.expectedNames {
-				if blockedProducts.ContainsName(elem.name) != elem.wanted {
-					t.Errorf("ContainsName(%q) = %t, want %t", elem.name, !elem.wanted, elem.wanted)
+				got := blockedProducts.ContainsName(elem.name)
+				if got != elem.wanted {
+					t.Errorf("ContainsName(%q) = %t, want %t", elem.name, got, elem.wanted)
 				}
 			}
 

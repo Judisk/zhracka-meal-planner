@@ -29,7 +29,7 @@ func insertDB(t *testing.T, db *sql.DB, p products.Product) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
-func productFounder(t *testing.T, db *sql.DB, id products.ProductID) ProdsForGui {
+func findProduct(t *testing.T, db *sql.DB, id products.ProductID) ProdsForGui {
 	t.Helper()
 	p, err := storage.SelectProductByID(db, id)
 	if err != nil {
@@ -491,7 +491,7 @@ func TestServiceProds_Edit_Table(t *testing.T) {
 			}
 			if !tt.expectedError {
 
-				new := productFounder(t, db, foundId)
+				new := findProduct(t, db, foundId)
 
 				if expect.Prod.Name != new.Prod.Name {
 					t.Errorf("expected name %q got %q", expect.Prod.Name, new.Prod.Name)
@@ -614,7 +614,7 @@ func TestServiceProds_Add_Table(t *testing.T) {
 			}
 			if !tt.expectedError {
 
-				new := productFounder(t, db, foundId)
+				new := findProduct(t, db, foundId)
 
 				if expect.Prod.Name != new.Prod.Name {
 					t.Errorf("expected name %q got %q", expect.Prod.Name, new.Prod.Name)
@@ -644,7 +644,7 @@ func TestServiceProds_Delete(t *testing.T) {
 
 	p := ProdsForGui{products.NewDefaultProduct("rice", products.Grain)}
 	insertDB(t, db, p.Prod)
-	p = productFounder(t, db, foundID)
+	p = findProduct(t, db, foundID)
 	err := p.Delete(db)
 	if err != nil {
 		t.Fatalf("expected %v got %v", nil, err)
