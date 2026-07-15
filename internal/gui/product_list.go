@@ -263,12 +263,12 @@ func AddButton(db *sql.DB, w fyne.Window, rightPanel *fyne.Container, state *Fil
 			pref = products.Disliked
 		}
 		newProd := service.ProdsForGui{
-			Prod: products.Product{
-				Name:       nameEntry.Text,
-				Category:   products.Category(categorySelect.Selected),
-				Banned:     bannedCheck.Checked,
-				Preference: products.PreferenceStatus(pref),
-			},
+			Prod: products.NewProduct(
+				nameEntry.Text,
+				products.Category(categorySelect.Selected),
+				bannedCheck.Checked,
+				products.PreferenceStatus(pref),
+			),
 		}
 		if err := newProd.Add(db); err != nil {
 			dialog.ShowError(err, w)
